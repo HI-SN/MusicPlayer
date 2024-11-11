@@ -5,20 +5,22 @@ import (
 	"log"
 
 	_ "github.com/go-sql-driver/mysql" // PostgreSQL 驱动，您可以根据需要更换为其他驱动
+	// "gorm.io/gorm"
 
-	"backend/config"
+	"backend/configs"
 	"fmt"
 )
 
 var DB *sql.DB
+var err error
 
 func InitDB() error {
-	dbConfig := config.AppConfig.Database
+	dbConfig := configs.AppConfig.Database
 	// Set up the database source string.
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", dbConfig.Username, dbConfig.Password, dbConfig.Host, dbConfig.Port, dbConfig.Name)
 
 	// Create a database handle and open a connection pool.
-	DB, err := sql.Open("mysql", dataSourceName)
+	DB, err = sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Fatalf("Error opening database: %v", err)
 		return err
@@ -31,7 +33,7 @@ func InitDB() error {
 		return err
 	}
 
-	log.Println("Database connected successfully")
+	log.Println("数据库连接成功")
 	return nil
 }
 

@@ -1,9 +1,9 @@
-package config
+package configs
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
+	"os"
 )
 
 type Config struct {
@@ -25,7 +25,10 @@ var AppConfig Config
 
 // LoadConfig 从配置文件加载配置
 func LoadConfig(filePath string) {
-	data, err := ioutil.ReadFile(filePath)
+	// ioutil在go1.16版本已经被废弃
+	// data, err := ioutil.ReadFile(filePath)
+
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Fatalf("无法读取配置文件: %v", err)
 	}
