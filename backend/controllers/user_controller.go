@@ -3,9 +3,11 @@ package controllers
 import (
 	"backend/database"
 	"backend/models"
+	"encoding/base64"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -38,27 +40,20 @@ func (uc *UserController) Login(c *gin.Context) {
 		return
 	}
 
-	// 检查用户是否存在
-	user, err := models.GetUser(database.DB, newUser.User_id)
+	// 检查用户邮箱是否存在
+	user, err := models.GetUserByEmail(database.DB, newUser.User_id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserByEmail failed"})
 		return
 	}
 	if user == nil {
-		// 若账号查找不到用户，则用户可能输入的是邮箱，再查找一次邮箱
-		user, err = models.GetUserByEmail(database.DB, newUser.User_id)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-			return
-		}
-		if user == nil {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{
-				"code":    422,
-				"message": "账号不存在",
-			})
-			return
-		}
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"code":    422,
+			"message": "账号不存在",
+		})
+		return
 	}
+	// }
 	// 验证密码是否正确
 	// 哈希密码对比
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newUser.Password))
@@ -71,9 +66,12 @@ func (uc *UserController) Login(c *gin.Context) {
 		return
 	}
 
-	// 登录成功后应该跳转到相应的页面
-
 	c.JSON(http.StatusOK, gin.H{"message": "登录成功"})
+}
+
+// 退出登录
+func (uc *UserController) Logout(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "退出登录成功"})
 }
 
 // CreateUser 处理创建用户请求
@@ -87,13 +85,13 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	}
 
 	// 检查用户id、密码、邮箱等是否为空
-	if len(newUser.User_id) == 0 {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code":    422,
-			"message": "账号不能为空",
-		})
-		return
-	}
+	// if len(newUser.User_id) == 0 {
+	// 	c.JSON(http.StatusUnprocessableEntity, gin.H{
+	// 		"code":    422,
+	// 		"message": "账号不能为空",
+	// 	})
+	// 	return
+	// }
 	if len(newUser.Password) < 6 {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"code":    422,
@@ -109,8 +107,8 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	// 检查用户是否存在
-	user, err := models.GetUser(database.DB, newUser.User_id)
+	// 检查用户邮箱是否存在
+	user, err := models.GetUserByEmail(database.DB, newUser.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
@@ -122,6 +120,14 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		})
 		return
 	}
+
+	// 生成一个新的UUID
+	newUUID := uuid.New()
+
+	// 将UUID转换为Base62编码
+	uuidBytes := newUUID[:]
+	encodedUUID := base64.URLEncoding.EncodeToString(uuidBytes)
+	newUser.User_id = encodedUUID[:15]
 
 	// 哈希密码加密
 	hasedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
@@ -146,13 +152,32 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 
 // GetUser 根据ID获取用户信息
 func (uc *UserController) GetUser(c *gin.Context) {
-	// 这里添加根据ID获取用户的逻辑
-	c.JSON(http.StatusOK, gin.H{"message": "User retrieved"})
+	user, err := models.GetUser(database.DB, c.Param("user_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "User not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "User retrieved", "data": user})
 }
 
 // UpdateUser 更新用户信息
 func (uc *UserController) UpdateUser(c *gin.Context) {
-	// 这里添加更新用户的逻辑
+	var user models.User
+
+	// 绑定 JSON 到结构体
+	if err := c.ShouldBind(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
+		return
+	}
+
+	user.User_id = c.Param("user_id")
+
+	err := models.UpdateUser(database.DB, &user)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "Update failed"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "User updated"})
 }
 

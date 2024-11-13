@@ -17,7 +17,7 @@ var err error
 func InitDB() error {
 	dbConfig := configs.AppConfig.Database
 	// Set up the database source string.
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", dbConfig.Username, dbConfig.Password, dbConfig.Host, dbConfig.Port, dbConfig.Name)
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=true", dbConfig.Username, dbConfig.Password, dbConfig.Host, dbConfig.Port, dbConfig.Name)
 
 	// Create a database handle and open a connection pool.
 	DB, err = sql.Open("mysql", dataSourceName)
