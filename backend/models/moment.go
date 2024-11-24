@@ -21,8 +21,8 @@ func (Moment) TableName() string {
 func CreateMoment(db *sql.DB, m *Moment) error {
 	m.Created_at = time.Now()
 
-	query := `INSERT INTO moment_info (content, user_id, created_at, pic_url) VALUES (?, ?, ?, ?)`
-	_, err := db.Exec(query, m.Content, m.User_id, m.Created_at, m.Pic_url)
+	query := `INSERT INTO moment_info (content, created_at, user_id, pic_url) VALUES (?, ?, ?, ?)`
+	_, err := db.Exec(query, m.Content, m.Created_at, m.User_id, m.Pic_url)
 	return err
 }
 
@@ -36,7 +36,9 @@ func UpdateMoment(db *sql.DB, m *Moment) error {
 // 根据动态ID删除动态
 func DeleteMoment(db *sql.DB, momentID int) error {
 	// 删除动态的关联内容（评论等）
-
+	if err := DeleteCommentByMoment(db, momentID); err != nil {
+		return err
+	}
 	// 删除动态
 	query := `DELETE FROM moment_info WHERE id = ?`
 	_, err := db.Exec(query, momentID)
