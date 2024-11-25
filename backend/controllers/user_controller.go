@@ -5,6 +5,7 @@ import (
 	"backend/models"
 	"encoding/base64"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,32 +17,18 @@ type UserController struct{}
 
 // 用户登录
 func (uc *UserController) Login(c *gin.Context) {
-	var newUser models.User
-
+	var a = struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}{}
 	// 绑定 JSON 到结构体
-	if err := c.ShouldBind(&newUser); err != nil {
+	if err := c.ShouldBind(&a); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBind"})
 		return
 	}
 
-	// 检查用户id、密码、邮箱等是否为空
-	if len(newUser.User_id) == 0 {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code":    422,
-			"message": "账号不能为空",
-		})
-		return
-	}
-	if len(newUser.Password) < 6 {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code":    422,
-			"message": "密码不能少于6位",
-		})
-		return
-	}
-
 	// 检查用户邮箱是否存在
-	user, err := models.GetUserByEmail(database.DB, newUser.User_id)
+	user, err := models.GetUserByEmail(database.DB, a.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserByEmail failed"})
 		return
@@ -50,13 +37,14 @@ func (uc *UserController) Login(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"code":    422,
 			"message": "账号不存在",
+			"data":    a,
 		})
 		return
 	}
 	// }
 	// 验证密码是否正确
 	// 哈希密码对比
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newUser.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(a.Password))
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"code":    500,
@@ -84,14 +72,6 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	// 检查用户id、密码、邮箱等是否为空
-	// if len(newUser.User_id) == 0 {
-	// 	c.JSON(http.StatusUnprocessableEntity, gin.H{
-	// 		"code":    422,
-	// 		"message": "账号不能为空",
-	// 	})
-	// 	return
-	// }
 	if len(newUser.Password) < 6 {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"code":    422,
@@ -181,8 +161,118 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User updated"})
 }
 
-// DeleteUser 删除用户
-func (uc *UserController) DeleteUser(c *gin.Context) {
-	// 这里添加删除用户的逻辑
-	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
+// // DeleteUser 删除用户
+// func (uc *UserController) DeleteUser(c *gin.Context) {
+// 	// 这里添加删除用户的逻辑
+// 	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
+// }
+
+// 用户发布动态
+func (uc *UserController) CreateMoment(c *gin.Context) {
+	var moment models.Moment
+	// 绑定 JSON 到结构体
+	if err := c.ShouldBind(&moment); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
+		return
+	}
+
+	// 创建用户
+	if err := models.CreateMoment(database.DB, &moment); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Moment created"})
+}
+
+// 获取某用户的所有动态
+func (uc *UserController) GetAllMoments(c *gin.Context) {
+	user_id := c.Param("user_id")
+	results, err := models.GetUserMoments(database.DB, user_id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Moments get", "data": results})
+}
+
+// // 获取某条动态
+// func (uc *UserController) GetMoment(c *gin.Context) {
+// 	var moment models.Moment
+// 	// 绑定 JSON 到结构体
+// 	if err := c.ShouldBind(&moment); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
+// 		return
+// 	}
+
+// 	// 创建用户
+// 	if err := models.CreateMoment(database.DB, &moment); err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{"message": "Moment created"})
+// }
+
+// 用户修改动态
+func (uc *UserController) UpdateMoment(c *gin.Context) {
+	var moment models.Moment
+	// 绑定 JSON 到结构体
+	if err := c.ShouldBind(&moment); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
+		return
+	}
+
+	// 创建用户
+	if err := models.CreateMoment(database.DB, &moment); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Moment created"})
+}
+
+// 删除某用户的所有动态
+func (uc *UserController) DeleteMoment(c *gin.Context) {
+	moment_id, err := strconv.Atoi(c.Param("moment_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	err = models.DeleteMoment(database.DB, (moment_id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Moment deleted"})
+}
+
+// 获取关注列表
+func (uc *UserController) GetFollows(c *gin.Context) {
+	fa, err := models.GetFollowingArtistList(database.DB, c.Param("user_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	fu, err := models.GetFollowingUserList(database.DB, c.Param("user_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "following list get", "artistList": fa, "userList": fu})
+}
+
+// 获取粉丝列表
+func (uc *UserController) GetFollowers(c *gin.Context) {
+	// fa, err := models.GetFollowerArtistList(database.DB, c.Param("user_id"))
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+	// 	return
+	// }
+	fu, err := models.GetFollowerUserList(database.DB, c.Param("user_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "following list get", "userList": fu})
 }

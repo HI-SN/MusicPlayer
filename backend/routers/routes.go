@@ -7,29 +7,39 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine, userController *controllers.UserController,
-	emailController *controllers.EmailController) {
+	emailController *controllers.EmailController, momentController *controllers.MomentController) {
 
 	// 用户认证相关路由
-	authGroup := r.Group("/auth")
-	{
-		// 发送邮箱验证码
-		authGroup.POST("/send-verification-email", emailController.SendVerification)
-		// 验证邮箱验证码
-		authGroup.POST("/verify-email", emailController.VerifyCode)
-		// 注册
-		authGroup.POST("/register", userController.CreateUser)
-		// 登录
-		authGroup.POST("/login", userController.Login)
-		// 退出登录
-		authGroup.POST("/logout", userController.Logout)
-	}
+
+	// 发送邮箱验证码
+	r.POST("/captcha/send", emailController.SendVerification)
+	// 验证邮箱验证码
+	r.POST("/captcha/verify", emailController.VerifyCode)
+	// 注册
+	r.POST("/register", userController.CreateUser)
+	// 登录
+	r.POST("/login", userController.Login)
+	// 退出登录
+	r.POST("/logout", userController.Logout)
 
 	// 用户相关路由
 	userGroup := r.Group("/users")
 	{
 		userGroup.GET("/:user_id", userController.GetUser)
 		userGroup.PUT("/:user_id", userController.UpdateUser)
+		userGroup.POST("/:user_id/moments", userController.CreateMoment)
+		userGroup.GET("/:user_id/moments", userController.GetAllMoments)
+		// userGroup.DELETE("/:user_id/:moment_id", userController.DeleteMoment)
 		// userGroup.DELETE("/:user_id", userController.DeleteUser)
+		userGroup.GET("/:user_id/follows", userController.GetFollows)
+		userGroup.GET("/:user_id/followers", userController.GetFollowers)
+	}
+
+	// 动态相关路由
+	momentGroup := r.Group("/moments")
+	{
+		momentGroup.GET("/:moment_id", momentController.GetMoment)
+
 	}
 
 	// productGroup := r.Group("/products")
