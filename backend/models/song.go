@@ -1,25 +1,22 @@
 package models
 
-// import (
-// 	"database/sql"
-// 	"strconv"
-// 	"strings"
-// 	"time"
-// )
+import (
+	"time"
+)
 
-// type Song struct {
-// 	Song_id      int
-// 	Title        string
-// 	Duration     int
-// 	Album_id     int
-// 	Genre        string
-// 	Release_date time.Time
-// 	Song_url     string
-// 	Lyrics       string
-// 	Created_at   time.Time
-// 	Updated_at   time.Time
-// 	Song_hit     int
-// }
+type Song struct {
+	Song_id      int
+	Title        string
+	Duration     int
+	Album_id     int
+	Genre        string
+	Release_date time.Time
+	Song_url     string
+	Lyrics       string
+	Created_at   time.Time
+	Updated_at   time.Time
+	Song_hit     int
+}
 
 // func (Song) TableName() string {
 // 	return "song_info" // 数据库中的表名

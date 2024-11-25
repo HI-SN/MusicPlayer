@@ -1,13 +1,31 @@
 package routers
 
 import (
-	"backend/controllers" // 替换为您的项目路径
+	"backend/controllers"
+	"backend/services"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRoutes(r *gin.Engine, userController *controllers.UserController,
 	emailController *controllers.EmailController, momentController *controllers.MomentController) {
+
+	// 实例化控制器和服务
+	songController := &controllers.SongController{
+		Service: &services.SongService{},
+	}
+	albumController := &controllers.AlbumController{
+		Service: &services.AlbumService{},
+	}
+	playerController := &controllers.PlayerController{
+		Service: &services.PlayerService{},
+	}
+	uploadController := &controllers.UploadController{
+		Service: &services.UploadService{},
+	}
+	playlistController := &controllers.PlaylistController{
+		Service: &services.PlaylistService{},
+	}
 
 	// 用户认证相关路由
 
@@ -51,4 +69,45 @@ func SetupRoutes(r *gin.Engine, userController *controllers.UserController,
 	// }
 
 	// 其他路由...
+	// 歌曲相关路由
+	songGroup := r.Group("/songs")
+	{
+		songGroup.POST("/create", songController.CreateSong)
+		songGroup.GET("/:song_id", songController.GetSong)
+	}
+
+	// 专辑相关路由
+	albumGroup := r.Group("/albums")
+	{
+		albumGroup.POST("/create", albumController.CreateAlbum)
+		albumGroup.GET("/:album_id", albumController.GetAlbum)
+	}
+
+	// 播放器相关路由
+	playerGroup := r.Group("/player")
+	{
+		playerGroup.GET("/play/:song_id", playerController.PlaySong)
+		playerGroup.GET("/pause/:song_id", playerController.PauseSong)
+		playerGroup.GET("/resume/:song_id", playerController.ResumeSong)
+		playerGroup.GET("/volume/:song_id/:volume", playerController.AdjustVolume)
+	}
+
+	// 上传相关路由
+	uploadGroup := r.Group("/upload")
+	{
+		uploadGroup.POST("/audio", uploadController.UploadAudio)
+		uploadGroup.POST("/song-info", uploadController.UploadSongInfo)
+		uploadGroup.POST("/lyrics/:song_id", uploadController.UploadLyrics)
+	}
+	// 播放列表相关路由
+	playlistGroup := r.Group("/playlists")
+	{
+		playlistGroup.POST("/", playlistController.CreatePlaylist)
+		playlistGroup.GET("/:playlist_id", playlistController.GetPlaylist)
+		playlistGroup.PUT("/:playlist_id", playlistController.UpdatePlaylist)
+		playlistGroup.DELETE("/:playlist_id", playlistController.DeletePlaylist)
+		playlistGroup.POST("/:playlist_id/add/:song_id", playlistController.AddSongToPlaylist)
+		playlistGroup.DELETE("/:playlist_id/remove/:song_id", playlistController.RemoveSongFromPlaylist)
+		playlistGroup.GET("/:playlist_id/songs", playlistController.GetSongsByPlaylistID)
+	}
 }
