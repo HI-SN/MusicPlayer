@@ -1,0 +1,2 @@
+# backend/controllers
+controllers\user_controller.go:267:55: cannot use c.Param("user_id") (value of type string) as int value in argument to models.GetFollowerArtistList

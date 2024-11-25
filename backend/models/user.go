@@ -52,12 +52,12 @@ func UpdateUser(db *sql.DB, user *User) error {
 	return err
 }
 
-// DeleteUser 根据用户ID删除用户
-func DeleteUser(db *sql.DB, userID int) error {
-	query := "DELETE FROM user_info WHERE user_id=$1"
-	_, err := db.Exec(query, userID)
-	return err
-}
+// DeleteUser 根据用户ID删除用户  暂时用不上
+// func DeleteUser(db *sql.DB, userID int) error {
+// 	query := "DELETE FROM user_info WHERE user_id=$1"
+// 	_, err := db.Exec(query, userID)
+// 	return err
+// }
 
 // GetUser 根据用户ID获取用户信息
 func GetUser(db *sql.DB, userID string) (*User, error) {
