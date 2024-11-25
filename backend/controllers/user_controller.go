@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"backend/database"
 	"backend/models"
 	"backend/services"
 	"encoding/base64"
@@ -14,7 +13,8 @@ import (
 
 // UserController 定义用户相关的处理函数
 type UserController struct {
-	Service *services.UserService
+	Service  *services.UserService
+	FService *services.FollowService
 }
 
 // 用户登录
@@ -171,14 +171,14 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 
 // 获取关注列表
 func (uc *UserController) GetFollows(c *gin.Context) {
-	fa, err := models.GetFollowingArtistList(database.DB, c.Param("user_id"))
+	fa, err := uc.FService.GetFollowingArtistList(c.Param("user_id"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetFollowingArtistList failed"})
 		return
 	}
-	fu, err := models.GetFollowingUserList(database.DB, c.Param("user_id"))
+	fu, err := uc.FService.GetFollowingUserList(c.Param("user_id"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetFollowingUserList failed"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "following list get", "artistList": fa, "userList": fu})
@@ -191,7 +191,7 @@ func (uc *UserController) GetFollowers(c *gin.Context) {
 	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 	// 	return
 	// }
-	fu, err := models.GetFollowerUserList(database.DB, c.Param("user_id"))
+	fu, err := uc.FService.GetFollowerUserList(c.Param("user_id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
