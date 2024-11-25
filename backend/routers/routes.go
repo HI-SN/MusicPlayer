@@ -7,8 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(r *gin.Engine, userController *controllers.UserController,
-	emailController *controllers.EmailController, momentController *controllers.MomentController) {
+func SetupRoutes(r *gin.Engine) {
 
 	// 实例化控制器和服务
 	songController := &controllers.SongController{
@@ -25,6 +24,14 @@ func SetupRoutes(r *gin.Engine, userController *controllers.UserController,
 	}
 	playlistController := &controllers.PlaylistController{
 		Service: &services.PlaylistService{},
+	}
+
+	userController := &controllers.UserController{
+		Service: &services.UserService{},
+	}
+	emailController := &controllers.EmailController{}
+	momentController := &controllers.MomentController{
+		Service: &services.MomentService{},
 	}
 
 	// 用户认证相关路由
@@ -45,19 +52,18 @@ func SetupRoutes(r *gin.Engine, userController *controllers.UserController,
 	{
 		userGroup.GET("/:user_id", userController.GetUser)
 		userGroup.PUT("/:user_id", userController.UpdateUser)
-		userGroup.POST("/:user_id/moments", userController.CreateMoment)
-		userGroup.GET("/:user_id/moments", userController.GetAllMoments)
-		// userGroup.DELETE("/:user_id/:moment_id", userController.DeleteMoment)
-		// userGroup.DELETE("/:user_id", userController.DeleteUser)
 		userGroup.GET("/:user_id/follows", userController.GetFollows)
 		userGroup.GET("/:user_id/followers", userController.GetFollowers)
 	}
 
 	// 动态相关路由
-	momentGroup := r.Group("/moments")
+	momentGroup := r.Group("/moment")
 	{
+		momentGroup.POST("/", momentController.CreateMoment)
 		momentGroup.GET("/:moment_id", momentController.GetMoment)
-
+		momentGroup.GET("/all/:user_id", momentController.GetAllMoments)
+		momentGroup.PUT("/:moment_id", momentController.UpdateMoment)
+		momentGroup.DELETE("/:moment_id", momentController.DeleteMoment)
 	}
 
 	// productGroup := r.Group("/products")

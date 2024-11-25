@@ -3,9 +3,9 @@ package controllers
 import (
 	"backend/database"
 	"backend/models"
+	"backend/services"
 	"encoding/base64"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -13,7 +13,9 @@ import (
 )
 
 // UserController 定义用户相关的处理函数
-type UserController struct{}
+type UserController struct {
+	Service *services.UserService
+}
 
 // 用户登录
 func (uc *UserController) Login(c *gin.Context) {
@@ -28,7 +30,7 @@ func (uc *UserController) Login(c *gin.Context) {
 	}
 
 	// 检查用户邮箱是否存在
-	user, err := models.GetUserByEmail(database.DB, a.Email)
+	user, err := uc.Service.GetUserByEmail(a.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserByEmail failed"})
 		return
@@ -88,7 +90,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	}
 
 	// 检查用户邮箱是否存在
-	user, err := models.GetUserByEmail(database.DB, newUser.Email)
+	user, err := uc.Service.GetUserByEmail(newUser.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
@@ -121,7 +123,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	newUser.Password = string(hasedPassword)
 
 	// 创建用户
-	if err := models.CreateUser(database.DB, &newUser); err != nil {
+	if err := uc.Service.CreateUser(&newUser); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
@@ -132,7 +134,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 
 // GetUser 根据ID获取用户信息
 func (uc *UserController) GetUser(c *gin.Context) {
-	user, err := models.GetUser(database.DB, c.Param("user_id"))
+	user, err := uc.Service.GetUser(c.Param("user_id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "User not found"})
 		return
@@ -152,7 +154,7 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 
 	user.User_id = c.Param("user_id")
 
-	err := models.UpdateUser(database.DB, &user)
+	err := uc.Service.UpdateUser(&user)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "Update failed"})
 		return
@@ -166,86 +168,6 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 // 	// 这里添加删除用户的逻辑
 // 	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
 // }
-
-// 用户发布动态
-func (uc *UserController) CreateMoment(c *gin.Context) {
-	var moment models.Moment
-	// 绑定 JSON 到结构体
-	if err := c.ShouldBind(&moment); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
-		return
-	}
-
-	// 创建用户
-	if err := models.CreateMoment(database.DB, &moment); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Moment created"})
-}
-
-// 获取某用户的所有动态
-func (uc *UserController) GetAllMoments(c *gin.Context) {
-	user_id := c.Param("user_id")
-	results, err := models.GetUserMoments(database.DB, user_id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Moments get", "data": results})
-}
-
-// // 获取某条动态
-// func (uc *UserController) GetMoment(c *gin.Context) {
-// 	var moment models.Moment
-// 	// 绑定 JSON 到结构体
-// 	if err := c.ShouldBind(&moment); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
-// 		return
-// 	}
-
-// 	// 创建用户
-// 	if err := models.CreateMoment(database.DB, &moment); err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, gin.H{"message": "Moment created"})
-// }
-
-// 用户修改动态
-func (uc *UserController) UpdateMoment(c *gin.Context) {
-	var moment models.Moment
-	// 绑定 JSON 到结构体
-	if err := c.ShouldBind(&moment); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
-		return
-	}
-
-	// 创建用户
-	if err := models.CreateMoment(database.DB, &moment); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Moment created"})
-}
-
-// 删除某用户的所有动态
-func (uc *UserController) DeleteMoment(c *gin.Context) {
-	moment_id, err := strconv.Atoi(c.Param("moment_id"))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		return
-	}
-	err = models.DeleteMoment(database.DB, (moment_id))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Moment deleted"})
-}
 
 // 获取关注列表
 func (uc *UserController) GetFollows(c *gin.Context) {

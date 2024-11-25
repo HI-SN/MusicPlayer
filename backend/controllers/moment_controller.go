@@ -1,11 +1,118 @@
 package controllers
 
-import "github.com/gin-gonic/gin"
+import (
+	"backend/models"
+	"backend/services"
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
 
 // MomentController 定义用户相关的处理函数
-type MomentController struct{}
-
-// 获取单条动态
-func (mc *MomentController) GetMoment(c *gin.Context) {
-
+type MomentController struct {
+	Service  *services.MomentService
+	CService *services.CommentService
 }
+
+// 获取单条动态及评论
+func (mc *MomentController) GetMoment(c *gin.Context) {
+	momentID, err := strconv.Atoi(c.Param("moment_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	moment, err := mc.Service.GetMoment(momentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "moment not found"})
+		return
+	}
+	comments, err := mc.CService.GetAllComments(momentID, "moment")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "comment not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Moment get", "data": gin.H{"moment": moment, "comments": comments}})
+}
+
+// 发布动态
+func (mc *MomentController) CreateMoment(c *gin.Context) {
+	var moment models.Moment
+	// 绑定 JSON 到结构体
+	if err := c.ShouldBind(&moment); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
+		return
+	}
+
+	// 创建用户
+	if err := mc.Service.CreateMoment(&moment); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Moment created"})
+}
+
+// 获取某用户的所有动态
+func (mc *MomentController) GetAllMoments(c *gin.Context) {
+	user_id := c.Param("user_id")
+	results, err := mc.Service.GetUserMoments(user_id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Moments get", "data": results})
+}
+
+// 修改动态
+func (mc *MomentController) UpdateMoment(c *gin.Context) {
+	var moment models.Moment
+	// 绑定 JSON 到结构体
+	err := c.ShouldBind(&moment)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
+		return
+	}
+	moment.Moment_id, err = strconv.Atoi(c.Param("moment_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "Atoi"})
+		return
+	}
+	// 创建用户
+	if err := mc.Service.UpdateMoment(&moment); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Moment updated"})
+}
+
+// 删除某条动态
+func (mc *MomentController) DeleteMoment(c *gin.Context) {
+	moment_id, err := strconv.Atoi(c.Param("moment_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	err = mc.Service.DeleteMoment(moment_id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Moment deleted"})
+}
+
+// // 删除某用户的所有动态
+// func (mc *MomentController) DeleteAllMoment(c *gin.Context) {
+// 	moment_id, err := strconv.Atoi(c.Param("moment_id"))
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+// 		return
+// 	}
+// 	err = mc.Service.DeleteMoment(moment_id)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+// 		return
+// 	}
+// 	c.JSON(http.StatusOK, gin.H{"message": "Moment deleted"})
+// }
