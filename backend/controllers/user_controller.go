@@ -163,6 +163,56 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 
 }
 
+// 找回密码
+func (uc *UserController) ForgetPassword(c *gin.Context) {
+	var a = struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		Captcha  string `json:"captcha"`
+	}{}
+	// 绑定 JSON 到结构体
+	if err := c.ShouldBind(&a); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBind"})
+		return
+	}
+
+	// 检查用户邮箱是否存在
+	user, err := uc.Service.GetUserByEmail(a.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserByEmail failed"})
+		return
+	}
+	if user == nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"message": "账号不存在",
+		})
+		return
+	}
+
+	// 验证验证码的逻辑
+	// 获取验证码和过期时间
+	redisKey := "code:" + a.Email
+	code, err := database.RedisClient.Get(context.Background(), redisKey).Result()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "验证码已过期或不存在"})
+		return
+	}
+
+	// 检查验证码是否匹配以及是否过期
+	if a.Captcha == code {
+		user.Password = a.Password
+		err = uc.Service.UpdateUser(user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "UpdateUser failed"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "密码修改成功"})
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "验证码错误或已过期"})
+	}
+
+}
+
 // GetUser 根据ID获取用户信息
 func (uc *UserController) GetUser(c *gin.Context) {
 	user, err := uc.Service.GetUser(c.Param("user_id"))
