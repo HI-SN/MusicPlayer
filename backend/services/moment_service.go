@@ -79,3 +79,14 @@ func (m *MomentService) GetUserMoments(userID string) ([]*models.Moment, error) 
 
 	return results, nil
 }
+
+// 获取动态数量
+func (m *MomentService) GetMomentsCount(userID string) (int, error) {
+	var count int
+	err := database.DB.QueryRow("SELECT COUNT(*) FROM moment_info WHERE user_id = ?", userID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}

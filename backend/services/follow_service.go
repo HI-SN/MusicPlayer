@@ -7,21 +7,21 @@ import (
 
 type FollowService struct{}
 
-// 创建关注信息
+// 创建关注用户信息
 func (fs *FollowService) CreateFollowUser(f *models.FollowUser) error {
 	query := `INSERT INTO follow_user (follower_id, followed_id) VALUES (?, ?)`
 	_, err := database.DB.Exec(query, f.Follower_id, f.Followed_id)
 	return err
 }
 
-// 删除一条关注信息
+// 删除一条关注用户信息
 func (fs *FollowService) DeleteFollowUser(f *models.FollowUser) error {
 	query := `DELETE FROM follow_user WHERE follower_id = ? AND followed_id = ?`
 	_, err := database.DB.Exec(query, f.Follower_id, f.Followed_id)
 	return err
 }
 
-// 根据用户id获取关注列表
+// 根据用户id获取关注列表（用户）
 func (fs *FollowService) GetFollowingUserList(userID string) ([]string, error) {
 	// 执行查询
 	rows, err := database.DB.Query("SELECT followed_id FROM follow_user WHERE follower_id = ?", userID)
@@ -81,21 +81,21 @@ func (fs *FollowService) GetFollowerUserList(userID string) ([]string, error) {
 	return results, nil
 }
 
-// 创建关注信息
+// 创建关注歌手信息
 func (fs *FollowService) CreateFollowArtist(f *models.FollowArtist) error {
 	query := `INSERT INTO follow_artist (follower_id, followed_id) VALUES (?, ?)`
 	_, err := database.DB.Exec(query, f.Follower_id, f.Followed_id)
 	return err
 }
 
-// 删除一条关注信息
+// 删除一条歌手关注信息
 func (fs *FollowService) DeleteFollowArtist(f *models.FollowArtist) error {
 	query := `DELETE FROM follow_artist WHERE follower_id = ? AND followed_id = ?`
 	_, err := database.DB.Exec(query, f.Follower_id, f.Followed_id)
 	return err
 }
 
-// 根据用户id获取关注列表
+// 根据用户id获取关注列表(歌手)
 func (fs *FollowService) GetFollowingArtistList(userID string) ([]int, error) {
 	// 执行查询
 	rows, err := database.DB.Query("SELECT followed_id FROM follow_artist WHERE follower_id = ?", userID)
@@ -153,4 +153,44 @@ func (fs *FollowService) GetFollowerArtistList(artistID int) ([]string, error) {
 	}
 
 	return results, nil
+}
+
+// 根据用户id获取粉丝个数
+func (fs *FollowService) GetUserFollowerCount(userID string) (int, error) {
+	// 执行查询
+	var count int
+	err := database.DB.QueryRow("SELECT COUNT(*) FROM follow_user WHERE followed_id = ?", userID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+// 根据用户id获取关注个数
+func (fs *FollowService) GetUserFollowingCount(userID string) (int, error) {
+	// 执行查询
+	var count1, count2 int
+	err := database.DB.QueryRow("SELECT COUNT(*) FROM follow_user WHERE follower_id = ?", userID).Scan(&count1)
+	if err != nil {
+		return 0, err
+	}
+	err = database.DB.QueryRow("SELECT COUNT(*) FROM follow_artist WHERE follower_id = ?", userID).Scan(&count2)
+	if err != nil {
+		return 0, err
+	}
+
+	return count1 + count2, nil
+}
+
+// 根据歌手id获取粉丝个数
+func (fs *FollowService) GetArtistFollowerCount(artistID int) (int, error) {
+	// 执行查询
+	var count int
+	err := database.DB.QueryRow("SELECT COUNT(*) FROM follow_artist WHERE followed_id = ?", artistID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

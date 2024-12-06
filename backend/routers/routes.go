@@ -27,7 +27,9 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	userController := &controllers.UserController{
-		Service: &services.UserService{},
+		Service:  &services.UserService{},
+		FService: &services.FollowService{},
+		MService: &services.MomentService{},
 	}
 	emailController := &controllers.EmailController{}
 	momentController := &controllers.MomentController{
@@ -54,7 +56,7 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	// 用户相关路由
-	userGroup := r.Group("/users")
+	userGroup := r.Group("/api/user")
 	{
 		userGroup.GET("/:user_id", userController.GetUser)
 		userGroup.PUT("/:user_id", userController.UpdateUser)

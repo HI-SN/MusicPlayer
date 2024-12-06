@@ -19,6 +19,7 @@ import (
 type UserController struct {
 	Service  *services.UserService
 	FService *services.FollowService
+	MService *services.MomentService
 }
 
 // 用户登录
@@ -259,7 +260,31 @@ func (uc *UserController) GetUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "User not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "User retrieved", "data": user})
+
+	followers_count, err := uc.FService.GetUserFollowerCount(user.User_id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "User not found"})
+		return
+	}
+	following_count, err := uc.FService.GetUserFollowingCount(user.User_id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "User not found"})
+		return
+	}
+	moments_count, err := uc.MService.GetMomentsCount(user.User_id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user_id":         user.User_id,
+		"user_name":       user.User_name,
+		"profile_pic":     user.Profile_pic,
+		"followers_count": followers_count,
+		"following_count": following_count,
+		"moments_count":   moments_count,
+	})
 }
 
 // UpdateUser 更新用户信息
