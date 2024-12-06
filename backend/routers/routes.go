@@ -47,6 +47,8 @@ func SetupRoutes(r *gin.Engine) {
 		authGroup.POST("/login", userController.Login)
 		// 找回密码
 		authGroup.POST("/forgot-password", userController.ForgetPassword)
+		// 已登录用户修改密码
+		authGroup.POST("/change-password", userController.ChangePassword)
 		// // 退出登录
 		// authGroup.POST("/logout", userController.Logout)
 	}

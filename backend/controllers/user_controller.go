@@ -6,6 +6,7 @@ import (
 	"backend/services"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -60,19 +61,10 @@ func (uc *UserController) Login(c *gin.Context) {
 		}
 	} else {
 		// 验证验证码的逻辑
-		// 获取验证码和过期时间
-		redisKey := "code:" + a.Email
-		code, err := database.RedisClient.Get(context.Background(), redisKey).Result()
+		err = verifyCaptcha(a.Email, a.Captcha)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "验证码已过期或不存在"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
-		}
-
-		// 检查验证码是否匹配以及是否过期
-		if a.Captcha == code {
-			// c.JSON(http.StatusOK, gin.H{"message": "验证码验证成功"})
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "验证码错误或已过期"})
 		}
 	}
 
@@ -107,19 +99,10 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	}
 
 	// 验证验证码的逻辑
-	// 获取验证码和过期时间
-	redisKey := "code:" + newUser.Email
-	code, err := database.RedisClient.Get(context.Background(), redisKey).Result()
+	err := verifyCaptcha(newUser.Email, newUser.Captcha)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "验证码已过期或不存在"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
-	}
-
-	// 检查验证码是否匹配以及是否过期
-	if newUser.Captcha == code {
-		// c.JSON(http.StatusOK, gin.H{"message": "验证码验证成功"})
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "验证码错误或已过期"})
 	}
 
 	// 检查用户邮箱是否存在
@@ -190,27 +173,83 @@ func (uc *UserController) ForgetPassword(c *gin.Context) {
 	}
 
 	// 验证验证码的逻辑
-	// 获取验证码和过期时间
-	redisKey := "code:" + a.Email
-	code, err := database.RedisClient.Get(context.Background(), redisKey).Result()
+	err = verifyCaptcha(a.Email, a.Captcha)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "验证码已过期或不存在"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 检查验证码是否匹配以及是否过期
-	if a.Captcha == code {
-		user.Password = a.Password
-		err = uc.Service.UpdateUser(user)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "UpdateUser failed"})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"message": "密码修改成功"})
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "验证码错误或已过期"})
+	// 修改密码
+	user.Password = a.Password
+	err = uc.Service.UpdateUser(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "UpdateUserPassword failed"})
+		return
 	}
 
+	c.JSON(http.StatusOK, gin.H{"message": "密码修改成功"})
+
+}
+
+// 已登录用户修改密码
+func (uc *UserController) ChangePassword(c *gin.Context) {
+	// 读取 Cookie
+	sessionID, err := c.Cookie("sessionID")
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未授权的访问"})
+		return
+	}
+
+	// 从 Redis 中获取用户 ID
+	userID, err := database.RedisClient.Get(context.Background(), "session:"+sessionID).Result()
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "会话已过期或无效"})
+		return
+	}
+
+	// 绑定 JSON 到结构体
+	var a = struct {
+		OldPassword string `json:"old_password"`
+		NewPassword string `json:"new_password"`
+		Captcha     string `json:"captcha"`
+	}{}
+	if err := c.ShouldBind(&a); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBind"})
+		return
+	}
+
+	user, err := uc.Service.GetUser(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUser failed"})
+		return
+	}
+
+	if a.OldPassword != "" {
+		if user.Password != a.OldPassword {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "旧密码错误"})
+			return
+		}
+	} else {
+		// 验证验证码的逻辑
+		err = verifyCaptcha(user.Email, a.Captcha)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	user.Password = a.NewPassword
+
+	// 更新用户密码
+	err = uc.Service.UpdateUser(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "UpdateUserPassword failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "密码修改成功",
+	})
 }
 
 // GetUser 根据ID获取用户信息
@@ -301,4 +340,22 @@ func (uc *UserController) SomeProtectedEndpoint(c *gin.Context) {
 		"message": "访问成功",
 		"user_id": userID,
 	})
+}
+
+// 一些辅助函数
+// 校验邮箱验证码
+func verifyCaptcha(email, captcha string) error {
+	// 获取验证码和过期时间
+	redisKey := "code:" + email
+	code, err := database.RedisClient.Get(context.Background(), redisKey).Result()
+	if err != nil {
+		return fmt.Errorf("验证码已过期或不存在")
+	}
+
+	// 检查验证码是否匹配以及是否过期
+	if captcha != code {
+		return fmt.Errorf("验证码错误或已过期")
+	}
+
+	return nil
 }
