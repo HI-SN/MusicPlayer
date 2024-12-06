@@ -40,15 +40,10 @@ func SetupRoutes(r *gin.Engine) {
 	// 用户认证相关路由
 	authGroup := r.Group("/api/v1")
 	{
-		// 发送邮箱验证码
 		authGroup.POST("/send-captcha", emailController.SendVerification)
-		// 注册
 		authGroup.POST("/register", userController.CreateUser)
-		// 登录
 		authGroup.POST("/login", userController.Login)
-		// 找回密码
 		authGroup.POST("/forgot-password", userController.ForgetPassword)
-		// 已登录用户修改密码
 		authGroup.POST("/change-password", userController.ChangePassword)
 		// // 退出登录
 		// authGroup.POST("/logout", userController.Logout)

@@ -416,23 +416,71 @@ func (uc *UserController) GetFollowing(c *gin.Context) {
 			pagedUserList = userList[startIndex:]
 		}
 	}
-
+	if pagedArtistList == nil {
+		if pagedUserList == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有的数据范围", "artistList": []interface{}{}, "userList": []interface{}{}})
+		} else {
+			c.JSON(http.StatusOK, gin.H{"message": "成功获取关注列表", "artistList": []interface{}{}, "userList": pagedUserList})
+		}
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "成功获取关注列表", "artistList": pagedArtistList, "userList": pagedUserList})
 }
 
 // 获取粉丝列表
 func (uc *UserController) GetFollowers(c *gin.Context) {
-	// fa, err := models.GetFollowerArtistList(database.DB, c.Param("user_id"))
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-	// 	return
-	// }
-	fu, err := uc.FService.GetFollowerUserList(c.Param("user_id"))
+	fuIDs, err := uc.FService.GetFollowerUserList(c.Param("user_id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "following list get", "userList": fu})
+	var userList []*models.UserFollowUser
+	for _, id := range fuIDs {
+		uesr, err := uc.Service.GetUser(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUser failed"})
+			return
+		}
+		mCount, err := uc.MService.GetMomentsCount(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetMomentsCount failed"})
+			return
+		}
+		flerCount, err := uc.FService.GetUserFollowerCount(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserFollowerCount failed"})
+			return
+		}
+		flinCount, err := uc.FService.GetUserFollowingCount(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserFollowingCount failed"})
+			return
+		}
+		uFollowU := &models.UserFollowUser{
+			Followed_id:     id,
+			User_name:       uesr.User_name,
+			Profile_pic:     uesr.Profile_pic,
+			Moments_count:   mCount,
+			Followers_count: flerCount,
+			Following_count: flinCount,
+		}
+		userList = append(userList, uFollowU)
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	page_size, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	// 合并列表并分页
+	startIndex := (page - 1) * page_size
+	endIndex := startIndex + page_size
+	if startIndex >= len(userList) {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有数据范围", "userList": []interface{}{}})
+		return
+	}
+	if endIndex > len(userList) {
+		endIndex = len(userList)
+	}
+	pagedFollowingList := userList[startIndex:endIndex]
+	c.JSON(http.StatusOK, gin.H{"message": "成功获取粉丝列表", "userList": pagedFollowingList})
 }
 
 // 验证cookie的功能
