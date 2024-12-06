@@ -30,6 +30,7 @@ func SetupRoutes(r *gin.Engine) {
 		Service:  &services.UserService{},
 		FService: &services.FollowService{},
 		MService: &services.MomentService{},
+		Aservice: &services.ArtistService{},
 	}
 	emailController := &controllers.EmailController{}
 	momentController := &controllers.MomentController{
@@ -41,8 +42,6 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		// 发送邮箱验证码
 		authGroup.POST("/send-captcha", emailController.SendVerification)
-		// // 验证邮箱验证码
-		// authGroup.POST("/verify-captcha", emailController.VerifyCode)
 		// 注册
 		authGroup.POST("/register", userController.CreateUser)
 		// 登录
@@ -60,7 +59,7 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		userGroup.GET("/:user_id", userController.GetUser)
 		userGroup.PUT("/:user_id", userController.UpdateUser)
-		userGroup.GET("/:user_id/follows", userController.GetFollows)
+		userGroup.GET("/:user_id/following", userController.GetFollowing)
 		userGroup.GET("/:user_id/followers", userController.GetFollowers)
 	}
 

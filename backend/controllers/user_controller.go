@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,7 @@ type UserController struct {
 	Service  *services.UserService
 	FService *services.FollowService
 	MService *services.MomentService
+	Aservice *services.ArtistService
 }
 
 // 用户登录
@@ -315,18 +317,107 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 // }
 
 // 获取关注列表
-func (uc *UserController) GetFollows(c *gin.Context) {
-	fa, err := uc.FService.GetFollowingArtistList(c.Param("user_id"))
+func (uc *UserController) GetFollowing(c *gin.Context) {
+	// 先获取关注的歌手列表
+	faIDs, err := uc.FService.GetFollowingArtistList(c.Param("user_id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetFollowingArtistList failed"})
 		return
 	}
-	fu, err := uc.FService.GetFollowingUserList(c.Param("user_id"))
+	var artistList []*models.UserFollowArtist
+	for _, id := range faIDs {
+		artist, err := uc.Aservice.GetArtist(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetArtist failed"})
+			return
+		}
+		fCount, err := uc.FService.GetArtistFollowerCount(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetArtistFollowerCount failed"})
+			return
+		}
+		uFollowA := &models.UserFollowArtist{
+			Followed_id:     id,
+			Name:            artist.Name,
+			Profile_pic:     artist.Profile_pic,
+			Followers_count: fCount,
+		}
+		artistList = append(artistList, uFollowA)
+	}
+
+	// 再获取关注的用户列表
+	fuIDs, err := uc.FService.GetFollowingUserList(c.Param("user_id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetFollowingUserList failed"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "following list get", "artistList": fa, "userList": fu})
+	var userList []*models.UserFollowUser
+	for _, id := range fuIDs {
+		uesr, err := uc.Service.GetUser(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUser failed"})
+			return
+		}
+		mCount, err := uc.MService.GetMomentsCount(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetMomentsCount failed"})
+			return
+		}
+		flerCount, err := uc.FService.GetUserFollowerCount(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserFollowerCount failed"})
+			return
+		}
+		flinCount, err := uc.FService.GetUserFollowingCount(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserFollowingCount failed"})
+			return
+		}
+		uFollowU := &models.UserFollowUser{
+			Followed_id:     id,
+			User_name:       uesr.User_name,
+			Profile_pic:     uesr.Profile_pic,
+			Moments_count:   mCount,
+			Followers_count: flerCount,
+			Following_count: flinCount,
+		}
+		userList = append(userList, uFollowU)
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	page_size, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+
+	// 合并列表并分页
+	startIndex := (page - 1) * page_size
+	endIndex := startIndex + page_size
+
+	var pagedArtistList []*models.UserFollowArtist
+	var pagedUserList []*models.UserFollowUser
+
+	// 先填充歌手列表
+	if startIndex < len(artistList) {
+		if endIndex <= len(artistList) {
+			pagedArtistList = artistList[startIndex:endIndex]
+		} else {
+			pagedArtistList = artistList[startIndex:]
+			endIndex -= len(artistList)
+			startIndex = 0
+		}
+	} else {
+		startIndex -= len(artistList)
+		endIndex -= len(artistList)
+	}
+
+	// 如果歌手列表不够，再填充用户列表
+	if len(pagedArtistList) < page_size && startIndex < len(userList) {
+		if endIndex <= len(userList) {
+			pagedUserList = userList[startIndex:endIndex]
+		} else {
+			pagedUserList = userList[startIndex:]
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "成功获取关注列表", "artistList": pagedArtistList, "userList": pagedUserList})
 }
 
 // 获取粉丝列表
