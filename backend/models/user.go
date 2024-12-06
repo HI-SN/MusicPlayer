@@ -19,6 +19,12 @@ type User struct {
 	Updated_at  time.Time `json:"updated_at"`
 }
 
+// 注册时使用的结构体，方便映射；不存入数据库
+type UserRegister struct {
+	User
+	Captcha string `json:"captcha"`
+}
+
 func (User) TableName() string {
 	return "user_info" // 数据库中的表名
 }

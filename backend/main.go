@@ -29,5 +29,5 @@ func main() {
 	routers.SetupRoutes(r)
 
 	//在9090端口启动服务
-	panic(r.Run(":8080"))
+	panic(r.Run(":54212"))
 }

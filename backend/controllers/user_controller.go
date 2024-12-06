@@ -1,10 +1,13 @@
 package controllers
 
 import (
+	"backend/database"
 	"backend/models"
 	"backend/services"
+	"context"
 	"encoding/base64"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -22,6 +25,7 @@ func (uc *UserController) Login(c *gin.Context) {
 	var a = struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
+		Captcha  string `json:"captcha"`
 	}{}
 	// 绑定 JSON 到结构体
 	if err := c.ShouldBind(&a); err != nil {
@@ -37,26 +41,54 @@ func (uc *UserController) Login(c *gin.Context) {
 	}
 	if user == nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code":    422,
 			"message": "账号不存在",
 			"data":    a,
 		})
 		return
 	}
-	// }
+
 	// 验证密码是否正确
-	// 哈希密码对比
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(a.Password))
-	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code":    500,
-			"message": "账号或密码错误",
-			"err":     err,
-		})
-		return
+	if a.Password != "" {
+		// 哈希密码对比
+		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(a.Password))
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"message": "账号或密码错误",
+				"err":     err,
+			})
+			return
+		}
+	} else {
+		// 验证验证码的逻辑
+		// 获取验证码和过期时间
+		redisKey := "code:" + a.Email
+		code, err := database.RedisClient.Get(context.Background(), redisKey).Result()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "验证码已过期或不存在"})
+			return
+		}
+
+		// 检查验证码是否匹配以及是否过期
+		if a.Captcha == code {
+			// c.JSON(http.StatusOK, gin.H{"message": "验证码验证成功"})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "验证码错误或已过期"})
+		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "登录成功"})
+	// 生成会话 ID
+	sessionID := uuid.New().String()
+
+	// 将会话 ID 存储到 Redis 中
+	database.RedisClient.Set(context.Background(), "session:"+sessionID, user.User_id, time.Hour*24)
+
+	// 设置 Cookie 并发送给客户端
+	c.SetCookie("sessionID", sessionID, 3600*24, "/", "", false, true)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "登录成功",
+		"user_id": user.User_id,
+	})
 }
 
 // 退出登录
@@ -66,7 +98,7 @@ func (uc *UserController) Logout(c *gin.Context) {
 
 // CreateUser 处理创建用户请求
 func (uc *UserController) CreateUser(c *gin.Context) {
-	var newUser models.User
+	var newUser models.UserRegister
 
 	// 绑定 JSON 到结构体
 	if err := c.ShouldBind(&newUser); err != nil {
@@ -74,19 +106,20 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	if len(newUser.Password) < 6 {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code":    422,
-			"message": "密码不能少于6位",
-		})
+	// 验证验证码的逻辑
+	// 获取验证码和过期时间
+	redisKey := "code:" + newUser.Email
+	code, err := database.RedisClient.Get(context.Background(), redisKey).Result()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "验证码已过期或不存在"})
 		return
 	}
-	if len(newUser.Email) == 0 {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code":    422,
-			"message": "邮箱不能为空",
-		})
-		return
+
+	// 检查验证码是否匹配以及是否过期
+	if newUser.Captcha == code {
+		// c.JSON(http.StatusOK, gin.H{"message": "验证码验证成功"})
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "验证码错误或已过期"})
 	}
 
 	// 检查用户邮箱是否存在
@@ -97,7 +130,6 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	}
 	if user != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code":    422,
 			"message": "账号已存在",
 		})
 		return
@@ -114,8 +146,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	// 哈希密码加密
 	hasedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code":    500,
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "密码加密错误",
 		})
 		return
@@ -123,12 +154,12 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	newUser.Password = string(hasedPassword)
 
 	// 创建用户
-	if err := uc.Service.CreateUser(&newUser); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+	if err := uc.Service.CreateUser(&newUser.User); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "CreateUser failed", "error": err})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "注册成功", "user": newUser, "hasedPassword": string(hasedPassword)})
+	c.JSON(http.StatusOK, gin.H{"message": "注册成功", "user_id": newUser.User_id})
 
 }
 
@@ -197,4 +228,27 @@ func (uc *UserController) GetFollowers(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "following list get", "userList": fu})
+}
+
+// 验证cookie的功能
+func (uc *UserController) SomeProtectedEndpoint(c *gin.Context) {
+	// 读取 Cookie
+	sessionID, err := c.Cookie("sessionID")
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未授权的访问"})
+		return
+	}
+
+	// 从 Redis 中获取用户 ID
+	userID, err := database.RedisClient.Get(context.Background(), "session:"+sessionID).Result()
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "会话已过期或无效"})
+		return
+	}
+
+	// 继续处理请求
+	c.JSON(http.StatusOK, gin.H{
+		"message": "访问成功",
+		"user_id": userID,
+	})
 }
