@@ -13,7 +13,16 @@ func (cs *CommentService) CreateComment(c *models.Comment) error {
 	c.Created_at = time.Now()
 
 	query := `INSERT INTO comment_info (content, created_at, user_id, type, target_id) VALUES (?, ?, ?, ?, ?)`
-	_, err := database.DB.Exec(query, c.Content, c.Created_at, c.User_id, c.Type, c.Target_id)
+	result, err := database.DB.Exec(query, c.Content, c.Created_at, c.User_id, c.Type, c.Target_id)
+	if err != nil {
+		return err
+	}
+	// 获取插入记录的 ID
+	lastInsertID, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	c.Comment_id = int(lastInsertID)
 	return err
 }
 
@@ -40,7 +49,7 @@ func (cs *CommentService) DeleteCommentByMoment(momentID int) error {
 
 // 根据用户ID删除评论
 func (cs *CommentService) DeleteCommentByUser(userID int) error {
-	query := `DELETE FROM comment_info WHERE target_id = ?`
+	query := `DELETE FROM comment_info WHERE user_id = ?`
 	_, err := database.DB.Exec(query, userID)
 	return err
 }
