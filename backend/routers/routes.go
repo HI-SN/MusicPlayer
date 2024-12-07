@@ -35,7 +35,9 @@ func SetupRoutes(r *gin.Engine) {
 	}
 	emailController := &controllers.EmailController{}
 	momentController := &controllers.MomentController{
-		Service: &services.MomentService{},
+		Service:  &services.MomentService{},
+		CService: &services.CommentService{},
+		LService: &services.LikeService{},
 	}
 
 	r.Use(middleware.AuthMiddleware())
@@ -67,6 +69,7 @@ func SetupRoutes(r *gin.Engine) {
 		momentGroup.POST("/", momentController.CreateMoment)
 		// momentGroup.GET("/:moment_id", momentController.GetMoment)
 		momentGroup.GET("/all/:user_id", momentController.GetAllMoments)
+		momentGroup.POST("/:moment_id/like", momentController.LikeMoment)
 		momentGroup.PUT("/:moment_id", momentController.UpdateMoment)
 		momentGroup.DELETE("/:moment_id", momentController.DeleteMoment)
 	}

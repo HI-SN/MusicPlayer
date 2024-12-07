@@ -2,8 +2,8 @@ package models
 
 // Like represents the like_info table
 type Like struct {
-	MomentID int
-	UserID   string
+	Moment_id int    `josn:"moment_id"`
+	User_id   string `json:"user_id"`
 }
 
 func (Like) TableName() string {
