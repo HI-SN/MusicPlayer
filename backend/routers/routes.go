@@ -42,6 +42,7 @@ func SetupRoutes(r *gin.Engine) {
 	commentController := &controllers.CommentController{
 		Service:  &services.CommentService{},
 		UService: &services.UserService{},
+		LService: &services.LikeService{},
 	}
 
 	r.Use(middleware.AuthMiddleware())
@@ -78,9 +79,17 @@ func SetupRoutes(r *gin.Engine) {
 		momentGroup.GET("/:moment_id/like/count", momentController.GetMomentLikeCount)
 		momentGroup.PUT("/:moment_id", momentController.UpdateMoment)
 		momentGroup.DELETE("/:moment_id", momentController.DeleteMoment)
-		momentGroup.POST("/:moment_id/comment", commentController.CreateMomentComment)
-		momentGroup.GET("/:moment_id/comments", commentController.GetMomentComment)
-		momentGroup.DELETE("/comment/:comment_id", commentController.DeleteMomentComment)
+	}
+
+	// 评论相关路由
+	commentGroup := r.Group("/api/comment")
+	{
+		commentGroup.POST("/moment/:moment_id", commentController.CreateMomentComment)
+		commentGroup.GET("/moment/all/:moment_id", commentController.GetMomentComment)
+		commentGroup.DELETE("/moment/:comment_id", commentController.DeleteMomentComment)
+		commentGroup.POST("/:comment_id/like", commentController.LikeComment)
+		commentGroup.POST("/:comment_id/unlike", commentController.UnLikeComment)
+		commentGroup.GET("/:comment_id/like/count", commentController.GetCommentLikeCount)
 	}
 
 	// 其他路由...

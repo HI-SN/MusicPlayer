@@ -12,6 +12,7 @@ import (
 type CommentController struct {
 	Service  *services.CommentService
 	UService *services.UserService
+	LService *services.LikeService
 }
 
 // 创建动态评论
@@ -102,7 +103,7 @@ func (cc *CommentController) DeleteMomentComment(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
 		return
 	}
-	// userID := user_id.(string)
+
 	comment_id, err := strconv.Atoi(c.Param("comment_id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
@@ -114,4 +115,89 @@ func (cc *CommentController) DeleteMomentComment(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "评论删除"})
+}
+
+// 点赞评论
+func (cc *CommentController) LikeComment(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
+	comment_id, err := strconv.Atoi(c.Param("comment_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	hasLiked, err := cc.LService.HasUserLikedComment(comment_id, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	if hasLiked {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "已点过赞"})
+		return
+	}
+
+	err = cc.LService.CreateCommentLike(comment_id, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "评论点赞成功"})
+}
+
+// 取消点赞评论
+func (cc *CommentController) UnLikeComment(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
+	comment_id, err := strconv.Atoi(c.Param("comment_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	hasLiked, err := cc.LService.HasUserLikedComment(comment_id, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	if !hasLiked {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "未点过赞"})
+		return
+	}
+
+	err = cc.LService.DeleteCommentLike(comment_id, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "评论取消点赞成功"})
+}
+
+// 统计评论点赞数
+func (cc *CommentController) GetCommentLikeCount(c *gin.Context) {
+	comment_id, err := strconv.Atoi(c.Param("comment_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	count, err := cc.LService.GetCommentLikeCount(comment_id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to get like count", "error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"count": count, "message": "成功获取点赞数"})
 }

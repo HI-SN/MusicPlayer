@@ -1,2 +1,2 @@
-# backend/services
-services\moment_service.go:30:21: cannot use int(lastInsertID) (value of type int) as int64 value in assignment
+# backend/controllers
+controllers\comment_controller.go:196:2: declared and not used: count

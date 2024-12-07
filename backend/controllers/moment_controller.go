@@ -175,7 +175,7 @@ func (mc *MomentController) LikeMoment(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Moment liked"})
+	c.JSON(http.StatusOK, gin.H{"message": "动态点赞成功"})
 }
 
 // 取消点赞动态
