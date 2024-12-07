@@ -26,9 +26,6 @@ func main() {
 	//创建一个默认的路由引擎
 	r := gin.Default()
 
-	// 使用验证身份的中间件
-	// r.Use(middleware.AuthMiddleware())
-
 	routers.SetupRoutes(r)
 
 	//在9090端口启动服务

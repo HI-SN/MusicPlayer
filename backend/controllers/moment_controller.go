@@ -37,6 +37,14 @@ func (mc *MomentController) GetMoment(c *gin.Context) {
 
 // 发布动态
 func (mc *MomentController) CreateMoment(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
 	var moment models.Moment
 	// 绑定 JSON 到结构体
 	if err := c.ShouldBind(&moment); err != nil {
@@ -44,13 +52,15 @@ func (mc *MomentController) CreateMoment(c *gin.Context) {
 		return
 	}
 
-	// 创建用户
+	moment.User_id = userID
+
+	// 创建动态
 	if err := mc.Service.CreateMoment(&moment); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Moment created"})
+	c.JSON(http.StatusOK, gin.H{"message": "Moment created", "moment_id": userID, "created_at": moment.Created_at})
 }
 
 // 获取某用户的所有动态

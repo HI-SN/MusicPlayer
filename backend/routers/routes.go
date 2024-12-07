@@ -62,7 +62,7 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	// 动态相关路由
-	momentGroup := r.Group("/moment")
+	momentGroup := r.Group("/api/moment")
 	{
 		momentGroup.POST("/", momentController.CreateMoment)
 		momentGroup.GET("/:moment_id", momentController.GetMoment)
