@@ -18,10 +18,11 @@ import (
 
 // UserController 定义用户相关的处理函数
 type UserController struct {
-	Service  *services.UserService
-	FService *services.FollowService
-	MService *services.MomentService
-	Aservice *services.ArtistService
+	Service    *services.UserService
+	FService   *services.FollowService
+	MService   *services.MomentService
+	Aservice   *services.ArtistService
+	SetService *services.SettingService
 }
 
 // 用户登录
@@ -142,6 +143,16 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	// 创建用户
 	if err := uc.Service.CreateUser(&newUser.User); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "CreateUser failed", "error": err})
+		return
+	}
+
+	// 创建用户默认设置
+	setting := &models.Setting{
+		UserID: newUser.User_id,
+	}
+	err = uc.SetService.CreateSetting(setting)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "CreateSetting failed", "error": err})
 		return
 	}
 
@@ -502,6 +513,68 @@ func (uc *UserController) GetFollowers(c *gin.Context) {
 	}
 	pagedFollowingList := userList[startIndex:endIndex]
 	c.JSON(http.StatusOK, gin.H{"message": "成功获取粉丝列表", "userList": pagedFollowingList})
+}
+
+// 获取用户基础信息
+func (uc *UserController) GetUserBasic(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
+	user, err := uc.Service.GetUser(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUser failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户基础信息", "user": user})
+}
+
+// 获取隐私设置
+func (uc *UserController) GetUserSetting(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
+	setting, err := uc.SetService.GetSetting(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetSetting failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户隐私设置", "setting": setting})
+}
+
+// 更新隐私设置
+func (uc *UserController) UpdateUserSetting(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
+	var setting models.Setting
+	// 绑定 JSON 到结构体
+	if err := c.ShouldBind(&setting); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
+		return
+	}
+
+	setting.UserID = userID
+	err := uc.SetService.UpdateSetting(&setting)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "UpdateSetting failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "设置更新成功", "setting": setting})
 }
 
 // 一些辅助函数

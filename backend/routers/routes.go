@@ -28,10 +28,11 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	userController := &controllers.UserController{
-		Service:  &services.UserService{},
-		FService: &services.FollowService{},
-		MService: &services.MomentService{},
-		Aservice: &services.ArtistService{},
+		Service:    &services.UserService{},
+		FService:   &services.FollowService{},
+		MService:   &services.MomentService{},
+		Aservice:   &services.ArtistService{},
+		SetService: &services.SettingService{},
 	}
 	emailController := &controllers.EmailController{}
 	momentController := &controllers.MomentController{
@@ -60,12 +61,15 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	// 需要身份验证的路由
-	authRequiredGroup := r.Group("/api/")
+	authRequiredGroup := r.Group("/api")
 	authRequiredGroup.Use(middleware.AuthMiddleware())
 	{
 		// 用户相关
 		authRequiredGroup.POST("/v1/change-password", userController.ChangePassword)
+		authRequiredGroup.GET("/user/basic", userController.GetUserBasic)
 		authRequiredGroup.PUT("/user/basic", userController.UpdateUser)
+		authRequiredGroup.GET("/user/setting", userController.GetUserSetting)
+		authRequiredGroup.PUT("/user/setting", userController.UpdateUserSetting)
 		// 动态相关
 		authRequiredGroup.POST("/comment/moment/:moment_id", commentController.CreateMomentComment)
 		authRequiredGroup.POST("/moment", momentController.CreateMoment)
