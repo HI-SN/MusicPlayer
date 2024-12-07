@@ -305,6 +305,13 @@ func (uc *UserController) GetUser(c *gin.Context) {
 
 // UpdateUser 更新用户信息
 func (uc *UserController) UpdateUser(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+
 	var user models.User
 
 	// 绑定 JSON 到结构体
@@ -313,7 +320,7 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user.User_id = c.Param("user_id")
+	user.User_id = user_id.(string)
 
 	err := uc.Service.UpdateUser(&user)
 	if err != nil {

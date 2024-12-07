@@ -45,7 +45,7 @@ func SetupRoutes(r *gin.Engine) {
 		LService: &services.LikeService{},
 	}
 
-	r.Use(middleware.AuthMiddleware())
+	// r.Use(middleware.AuthMiddleware())
 
 	// 用户认证相关路由
 	authGroup := r.Group("/api/v1")
@@ -54,16 +54,34 @@ func SetupRoutes(r *gin.Engine) {
 		authGroup.POST("/register", userController.CreateUser)
 		authGroup.POST("/login", userController.Login)
 		authGroup.POST("/forgot-password", userController.ForgetPassword)
-		authGroup.POST("/change-password", userController.ChangePassword)
+		// authGroup.POST("/change-password", userController.ChangePassword)
 		// // 退出登录
 		// authGroup.POST("/logout", userController.Logout)
+	}
+
+	// 需要身份验证的路由
+	authRequiredGroup := r.Group("/api/")
+	authRequiredGroup.Use(middleware.AuthMiddleware())
+	{
+		// 用户相关
+		authRequiredGroup.POST("/v1/change-password", userController.ChangePassword)
+		authRequiredGroup.PUT("/user/basic", userController.UpdateUser)
+		// 动态相关
+		authRequiredGroup.POST("/comment/moment/:moment_id", commentController.CreateMomentComment)
+		authRequiredGroup.POST("/moment", momentController.CreateMoment)
+		authRequiredGroup.DELETE("/comment/moment/:comment_id", commentController.DeleteMomentComment)
+		authRequiredGroup.POST("/moment/:moment_id/like", momentController.LikeMoment)
+		authRequiredGroup.POST("/moment/:moment_id/unlike", momentController.UnLikeMoment)
+		//评论相关
+		authRequiredGroup.POST("/comment/:comment_id/like", commentController.LikeComment)
+		authRequiredGroup.POST("/comment/:comment_id/unlike", commentController.UnLikeComment)
+		// 其他需要身份验证的路由
 	}
 
 	// 用户相关路由
 	userGroup := r.Group("/api/user")
 	{
 		userGroup.GET("/:user_id", userController.GetUser)
-		userGroup.PUT("/:user_id", userController.UpdateUser)
 		userGroup.GET("/:user_id/following", userController.GetFollowing)
 		userGroup.GET("/:user_id/followers", userController.GetFollowers)
 	}
@@ -71,11 +89,7 @@ func SetupRoutes(r *gin.Engine) {
 	// 动态相关路由
 	momentGroup := r.Group("/api/moment")
 	{
-		momentGroup.POST("/", momentController.CreateMoment)
-		// momentGroup.GET("/:moment_id", momentController.GetMoment)
 		momentGroup.GET("/all/:user_id", momentController.GetAllMoments)
-		momentGroup.POST("/:moment_id/like", momentController.LikeMoment)
-		momentGroup.POST("/:moment_id/unlike", momentController.UnLikeMoment)
 		momentGroup.GET("/:moment_id/like/count", momentController.GetMomentLikeCount)
 		momentGroup.PUT("/:moment_id", momentController.UpdateMoment)
 		momentGroup.DELETE("/:moment_id", momentController.DeleteMoment)
@@ -84,11 +98,7 @@ func SetupRoutes(r *gin.Engine) {
 	// 评论相关路由
 	commentGroup := r.Group("/api/comment")
 	{
-		commentGroup.POST("/moment/:moment_id", commentController.CreateMomentComment)
 		commentGroup.GET("/moment/all/:moment_id", commentController.GetMomentComment)
-		commentGroup.DELETE("/moment/:comment_id", commentController.DeleteMomentComment)
-		commentGroup.POST("/:comment_id/like", commentController.LikeComment)
-		commentGroup.POST("/:comment_id/unlike", commentController.UnLikeComment)
 		commentGroup.GET("/:comment_id/like/count", commentController.GetCommentLikeCount)
 	}
 

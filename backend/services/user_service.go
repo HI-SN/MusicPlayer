@@ -31,9 +31,9 @@ func (u *UserService) CreateUser(user *models.User) error {
 // UpdateUser 更新现有用户
 func (u *UserService) UpdateUser(user *models.User) error {
 	user.Updated_at = time.Now()
-	query := `UPDATE user_info SET user_name=?, password=?, email=?, phone=?,
+	query := `UPDATE user_info SET user_name=?, email=?, phone=?,
 	country=?, region=?, gender=?, bio=?, profile_pic=?, updated_at=? WHERE user_id=?`
-	_, err := database.DB.Exec(query, user.User_name, user.Password, user.Email, user.Phone,
+	_, err := database.DB.Exec(query, user.User_name, user.Email, user.Phone,
 		user.Country, user.Region, user.Gender, user.Bio, user.Profile_pic, user.Updated_at, user.User_id)
 	return err
 }
