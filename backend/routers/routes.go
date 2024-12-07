@@ -70,17 +70,11 @@ func SetupRoutes(r *gin.Engine) {
 		// momentGroup.GET("/:moment_id", momentController.GetMoment)
 		momentGroup.GET("/all/:user_id", momentController.GetAllMoments)
 		momentGroup.POST("/:moment_id/like", momentController.LikeMoment)
+		momentGroup.POST("/:moment_id/unlike", momentController.UnLikeMoment)
+		momentGroup.GET("/:moment_id/like/count", momentController.GetMomentLikeCount)
 		momentGroup.PUT("/:moment_id", momentController.UpdateMoment)
 		momentGroup.DELETE("/:moment_id", momentController.DeleteMoment)
 	}
-
-	// productGroup := r.Group("/products")
-	// {
-	// 	productGroup.POST("/", productController.CreateProduct)
-	// 	productGroup.GET("/:id", productController.GetProduct)
-	// 	productGroup.PUT("/:id", productController.UpdateProduct)
-	// 	productGroup.DELETE("/:id", productController.DeleteProduct)
-	// }
 
 	// 其他路由...
 	// 歌曲相关路由

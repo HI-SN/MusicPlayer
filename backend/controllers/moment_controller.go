@@ -177,3 +177,57 @@ func (mc *MomentController) LikeMoment(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Moment liked"})
 }
+
+// 取消点赞动态
+func (mc *MomentController) UnLikeMoment(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
+	moment_id, err := strconv.Atoi(c.Param("moment_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "moment_id转换失败"})
+		return
+	}
+
+	hasLiked, err := mc.LService.HasUserLikedMoment(moment_id, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	if !hasLiked {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "未点过赞"})
+		return
+	}
+
+	err = mc.LService.DeleteMomentLike(moment_id, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Moment unliked"})
+}
+
+// 获取动态点赞数
+func (mc *MomentController) GetMomentLikeCount(c *gin.Context) {
+	// 获取动态ID
+	momentIDStr := c.Param("moment_id")
+	momentID, err := strconv.Atoi(momentIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid moment ID"})
+		return
+	}
+
+	// 获取点赞数
+	count, err := mc.LService.GetMomentLikeCount(momentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to get like count", "error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"count": count, "message": "成功获取点赞数"})
+}
