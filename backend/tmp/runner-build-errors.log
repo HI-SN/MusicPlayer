@@ -1,2 +1,2 @@
-# backend/controllers
-controllers\user_controller.go:267:55: cannot use c.Param("user_id") (value of type string) as int value in argument to models.GetFollowerArtistList
+# backend/services
+services\moment_service.go:30:21: cannot use int(lastInsertID) (value of type int) as int64 value in assignment

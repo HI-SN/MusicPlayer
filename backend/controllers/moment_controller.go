@@ -60,7 +60,7 @@ func (mc *MomentController) CreateMoment(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Moment created", "moment_id": userID, "created_at": moment.Created_at})
+	c.JSON(http.StatusOK, gin.H{"message": "Moment created", "moment_id": moment.Moment_id, "created_at": moment.Created_at})
 }
 
 // 获取某用户的所有动态
@@ -71,7 +71,23 @@ func (mc *MomentController) GetAllMoments(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Moments get", "data": results})
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	page_size, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+
+	// 合并列表并分页
+	startIndex := (page - 1) * page_size
+	endIndex := startIndex + page_size
+
+	if startIndex >= len(results) {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有数据范围", "momentList": []interface{}{}})
+		return
+	}
+	if endIndex > len(results) {
+		endIndex = len(results)
+	}
+	pagedMomentList := results[startIndex:endIndex]
+	c.JSON(http.StatusOK, gin.H{"message": "Moments get", "momentList": pagedMomentList})
 }
 
 // 修改动态

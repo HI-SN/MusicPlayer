@@ -15,8 +15,21 @@ func (m *MomentService) CreateMoment(moment *models.Moment) error {
 	moment.Created_at = time.Now()
 
 	query := `INSERT INTO moment_info (content, created_at, user_id, pic_url) VALUES (?, ?, ?, ?)`
-	_, err := database.DB.Exec(query, moment.Content, moment.Created_at, moment.User_id, moment.Pic_url)
-	return err
+	result, err := database.DB.Exec(query, moment.Content, moment.Created_at, moment.User_id, moment.Pic_url)
+	if err != nil {
+		return err
+	}
+
+	// 获取插入记录的 ID
+	lastInsertID, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	// 将插入的 ID 赋值给 moment
+	moment.Moment_id = int(lastInsertID)
+
+	return nil
 }
 
 // 在数据库中更新动态（只有动态内容和图片路径可以更改）

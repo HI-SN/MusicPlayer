@@ -5,11 +5,11 @@ import (
 )
 
 type Moment struct {
-	Moment_id  int
-	Content    string
-	User_id    string
-	Created_at time.Time
-	Pic_url    string
+	Moment_id  int       `json:"moment_id"`
+	Content    string    `json:"content"`
+	User_id    string    `json:"user_id"`
+	Created_at time.Time `json:"created_at"`
+	Pic_url    string    `json:"pic_url"`
 }
 
 func (Moment) TableName() string {

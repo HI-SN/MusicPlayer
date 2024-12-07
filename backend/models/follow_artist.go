@@ -2,8 +2,8 @@ package models
 
 // FollowArtist represents the follow_artist table
 type FollowArtist struct {
-	Follower_id string
-	Followed_id int
+	Follower_id string `json:"follower_id"`
+	Followed_id int    `json:"followed_id"`
 }
 
 func (FollowArtist) TableName() string {

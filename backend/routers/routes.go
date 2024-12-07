@@ -65,7 +65,7 @@ func SetupRoutes(r *gin.Engine) {
 	momentGroup := r.Group("/api/moment")
 	{
 		momentGroup.POST("/", momentController.CreateMoment)
-		momentGroup.GET("/:moment_id", momentController.GetMoment)
+		// momentGroup.GET("/:moment_id", momentController.GetMoment)
 		momentGroup.GET("/all/:user_id", momentController.GetAllMoments)
 		momentGroup.PUT("/:moment_id", momentController.UpdateMoment)
 		momentGroup.DELETE("/:moment_id", momentController.DeleteMoment)
