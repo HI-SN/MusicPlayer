@@ -182,8 +182,17 @@ func (uc *UserController) ForgetPassword(c *gin.Context) {
 		return
 	}
 
+	// 哈希密码加密
+	hasedPassword, err := bcrypt.GenerateFromPassword([]byte(a.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "密码加密错误",
+		})
+		return
+	}
+
 	// 修改密码
-	user.Password = a.Password
+	user.Password = string(hasedPassword)
 	err = uc.Service.UpdateUser(user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "UpdateUserPassword failed"})
@@ -196,19 +205,13 @@ func (uc *UserController) ForgetPassword(c *gin.Context) {
 
 // 已登录用户修改密码
 func (uc *UserController) ChangePassword(c *gin.Context) {
-	// 读取 Cookie
-	sessionID, err := c.Cookie("sessionID")
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "未授权的访问"})
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
 		return
 	}
-
-	// 从 Redis 中获取用户 ID
-	userID, err := database.RedisClient.Get(context.Background(), "session:"+sessionID).Result()
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "会话已过期或无效"})
-		return
-	}
+	userID := user_id.(string)
 
 	// 绑定 JSON 到结构体
 	var a = struct {
@@ -228,8 +231,10 @@ func (uc *UserController) ChangePassword(c *gin.Context) {
 	}
 
 	if a.OldPassword != "" {
-		if user.Password != a.OldPassword {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "旧密码错误"})
+		// 哈希密码对比
+		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(a.OldPassword))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err, "message": "旧密码错误"})
 			return
 		}
 	} else {
@@ -241,9 +246,18 @@ func (uc *UserController) ChangePassword(c *gin.Context) {
 		}
 	}
 
-	user.Password = a.NewPassword
+	// 哈希密码加密
+	hasedPassword, err := bcrypt.GenerateFromPassword([]byte(a.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "密码加密错误",
+			"error":   err,
+		})
+		return
+	}
 
-	// 更新用户密码
+	// 修改密码
+	user.Password = string(hasedPassword)
 	err = uc.Service.UpdateUser(user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "UpdateUserPassword failed"})
@@ -481,29 +495,6 @@ func (uc *UserController) GetFollowers(c *gin.Context) {
 	}
 	pagedFollowingList := userList[startIndex:endIndex]
 	c.JSON(http.StatusOK, gin.H{"message": "成功获取粉丝列表", "userList": pagedFollowingList})
-}
-
-// 验证cookie的功能
-func (uc *UserController) SomeProtectedEndpoint(c *gin.Context) {
-	// 读取 Cookie
-	sessionID, err := c.Cookie("sessionID")
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "未授权的访问"})
-		return
-	}
-
-	// 从 Redis 中获取用户 ID
-	userID, err := database.RedisClient.Get(context.Background(), "session:"+sessionID).Result()
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "会话已过期或无效"})
-		return
-	}
-
-	// 继续处理请求
-	c.JSON(http.StatusOK, gin.H{
-		"message": "访问成功",
-		"user_id": userID,
-	})
 }
 
 // 一些辅助函数

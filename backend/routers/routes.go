@@ -2,6 +2,7 @@ package routers
 
 import (
 	"backend/controllers"
+	"backend/middleware"
 	"backend/services"
 
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,8 @@ func SetupRoutes(r *gin.Engine) {
 	momentController := &controllers.MomentController{
 		Service: &services.MomentService{},
 	}
+
+	r.Use(middleware.AuthMiddleware())
 
 	// 用户认证相关路由
 	authGroup := r.Group("/api/v1")
