@@ -92,7 +92,7 @@ func (uc *UserController) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "退出登录成功"})
 }
 
-// CreateUser 处理创建用户请求
+// CreateUser 注册时处理创建用户请求
 func (uc *UserController) CreateUser(c *gin.Context) {
 	var newUser models.UserRegister
 
@@ -575,6 +575,140 @@ func (uc *UserController) UpdateUserSetting(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "设置更新成功", "setting": setting})
+}
+
+// 关注其他用户
+func (uc *UserController) FollowUser(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+	other_id := c.Param("user_id")
+	fu := &models.FollowUser{
+		Follower_id: userID,
+		Followed_id: other_id,
+	}
+	err := uc.FService.CreateFollowUser(fu)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "CreateFollowUser failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "关注用户成功"})
+}
+
+// 取消关注其他用户
+func (uc *UserController) UnfollowUser(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+	other_id := c.Param("user_id")
+	fu := &models.FollowUser{
+		Follower_id: userID,
+		Followed_id: other_id,
+	}
+	err := uc.FService.DeleteFollowUser(fu)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "DeleteFollowUser failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "取消关注用户成功"})
+}
+
+// 关注歌手
+func (uc *UserController) FollowArtist(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+	other_id, _ := strconv.Atoi(c.Param("artist_id"))
+	fa := &models.FollowArtist{
+		Follower_id: userID,
+		Followed_id: other_id,
+	}
+	err := uc.FService.CreateFollowArtist(fa)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "CreateFollowArtist failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "关注歌手成功"})
+}
+
+// 取消关注歌手
+func (uc *UserController) UnfollowArtist(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+	other_id, _ := strconv.Atoi(c.Param("artist_id"))
+	fa := &models.FollowArtist{
+		Follower_id: userID,
+		Followed_id: other_id,
+	}
+	err := uc.FService.DeleteFollowArtist(fa)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "DeleteFollowArtist failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "取消关注歌手成功"})
+}
+
+// 获取用户歌手列表
+func (uc *UserController) GetUserArtist(c *gin.Context) {
+	// 先获取关注的歌手列表
+	faIDs, err := uc.FService.GetFollowingArtistList(c.Param("user_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetFollowingArtistList failed"})
+		return
+	}
+	var artistList []*models.UserFollowArtist
+	for _, id := range faIDs {
+		artist, err := uc.Aservice.GetArtist(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetArtist failed"})
+			return
+		}
+		fCount, err := uc.FService.GetArtistFollowerCount(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetArtistFollowerCount failed"})
+			return
+		}
+		uFollowA := &models.UserFollowArtist{
+			Followed_id:     id,
+			Name:            artist.Name,
+			Profile_pic:     artist.Profile_pic,
+			Followers_count: fCount,
+		}
+		artistList = append(artistList, uFollowA)
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	page_size, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+
+	// 合并列表并分页
+	startIndex := (page - 1) * page_size
+	endIndex := startIndex + page_size
+	if startIndex >= len(artistList) {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有数据范围", "artistList": []interface{}{}})
+		return
+	}
+	if endIndex > len(artistList) {
+		endIndex = len(artistList)
+	}
+	pagedFollowingList := artistList[startIndex:endIndex]
+	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户歌手列表", "artistList": pagedFollowingList})
 }
 
 // 一些辅助函数

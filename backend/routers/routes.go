@@ -70,6 +70,10 @@ func SetupRoutes(r *gin.Engine) {
 		authRequiredGroup.PUT("/user/basic", userController.UpdateUser)
 		authRequiredGroup.GET("/user/setting", userController.GetUserSetting)
 		authRequiredGroup.PUT("/user/setting", userController.UpdateUserSetting)
+		authRequiredGroup.POST("user/follow/:user_id", userController.FollowUser)
+		authRequiredGroup.DELETE("user/unfollow/:user_id", userController.UnfollowUser)
+		authRequiredGroup.POST("user/follow/artist/:artist_id", userController.FollowArtist)
+		authRequiredGroup.DELETE("user/unfollow/artist/:artist_id", userController.UnfollowArtist)
 		// 动态相关
 		authRequiredGroup.POST("/comment/moment/:moment_id", commentController.CreateMomentComment)
 		authRequiredGroup.POST("/moment", momentController.CreateMoment)
@@ -88,6 +92,7 @@ func SetupRoutes(r *gin.Engine) {
 		userGroup.GET("/:user_id", userController.GetUser)
 		userGroup.GET("/:user_id/following", userController.GetFollowing)
 		userGroup.GET("/:user_id/followers", userController.GetFollowers)
+		userGroup.GET("/:user_id/artist", userController.GetUserArtist)
 	}
 
 	// 动态相关路由
