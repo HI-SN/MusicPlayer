@@ -72,6 +72,7 @@ func (p *PlaylistService) GetSongsByPlaylistID(playlistID int) ([]int, error) {
 	return (&SongPlaylistRelationService{}).GetSongsByPlaylistID(playlistID)
 }
 
+// GetPlaylistByUserID 根据用户ID获取用户创建的歌单列表
 func (p *PlaylistService) GetPlaylistByUserID(userID string) ([]models.Playlist, error) {
 	var playlists []models.Playlist
 	query := "SELECT id, title, user_id, created_at, description, type, hits, cover_url FROM playlist_info WHERE user_id=?"
@@ -89,4 +90,15 @@ func (p *PlaylistService) GetPlaylistByUserID(userID string) ([]models.Playlist,
 		playlists = append(playlists, playlist)
 	}
 	return playlists, nil
+}
+
+// GetPlaylistByPlaylistID 根据歌单ID获取歌单列表
+func (p *PlaylistService) GetPlaylistByPlaylistID(PlaylistID int) (*models.Playlist, error) {
+	playlist := &models.Playlist{}
+	query := "SELECT id, title, user_id, created_at, description, type, hits, cover_url FROM playlist_info WHERE id=?"
+	err := database.DB.QueryRow(query, PlaylistID).Scan(&playlist.Playlist_id, &playlist.Title, &playlist.User_id, &playlist.Create_at, &playlist.Description, &playlist.Type, &playlist.Hits, &playlist.Cover_url)
+	if err != nil {
+		return nil, err
+	}
+	return playlist, nil
 }

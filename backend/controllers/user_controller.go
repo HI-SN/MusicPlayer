@@ -28,6 +28,7 @@ type UserController struct {
 	ABService   *services.AlbumService
 	ASService   *services.ArtistSongService
 	PService    *services.PlaylistService
+	UPService   *services.UserPlaylistService
 }
 
 // 以下是登录页面相关的代码
@@ -830,7 +831,46 @@ func (uc *UserController) GetUserPlaylist(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户创建的歌单列表", "playlist": playLists})
 }
 
+// 用户收藏歌单
+func (uc *UserController) LikePlaylist(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+	playlist_id, _ := strconv.Atoi(c.Param("playlist_id"))
+	ulp := &models.UserLikePlaylist{
+		UserID:     userID,
+		PlaylistID: playlist_id,
+	}
+	err := uc.UPService.CreateUserLikePlaylist(ulp)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "CreateUserLikePlaylist failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "收藏歌单成功"})
+}
+
 // 获取用户收藏的歌单列表
+func (uc *UserController) GetUserLikePlaylist(c *gin.Context) {
+	playListIDs, err := uc.UPService.GetUserLikePlaylistList(c.Param("user_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "GetUserLikePlaylistList failed"})
+		return
+	}
+	var playLists []*models.Playlist
+	for _, id := range playListIDs {
+		playlist, err := uc.PService.GetPlaylistByPlaylistID(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "GetPlaylistByPlaylistID failed"})
+			return
+		}
+		playLists = append(playLists, playlist)
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户收藏的歌单列表", "playlist": playLists})
+}
 
 // 一些辅助函数
 // 校验邮箱验证码

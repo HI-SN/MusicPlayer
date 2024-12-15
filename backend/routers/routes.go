@@ -38,6 +38,7 @@ func SetupRoutes(r *gin.Engine) {
 		ABService:   &services.AlbumService{},
 		ASService:   &services.ArtistSongService{},
 		PService:    &services.PlaylistService{},
+		UPService:   &services.UserPlaylistService{},
 	}
 	emailController := &controllers.EmailController{}
 	momentController := &controllers.MomentController{
@@ -80,6 +81,7 @@ func SetupRoutes(r *gin.Engine) {
 		authRequiredGroup.POST("user/follow/artist/:artist_id", userController.FollowArtist)
 		authRequiredGroup.DELETE("user/unfollow/artist/:artist_id", userController.UnfollowArtist)
 		authRequiredGroup.POST("user/playlist/create", userController.CreatePlaylist)
+		authRequiredGroup.POST("user/like/playlist/:playlist_id", userController.LikePlaylist)
 		// 动态相关
 		authRequiredGroup.POST("/comment/moment/:moment_id", commentController.CreateMomentComment)
 		authRequiredGroup.POST("/moment", momentController.CreateMoment)
@@ -99,8 +101,9 @@ func SetupRoutes(r *gin.Engine) {
 		userGroup.GET("/:user_id/following", userController.GetFollowing)
 		userGroup.GET("/:user_id/followers", userController.GetFollowers)
 		userGroup.GET("/:user_id/artist", userController.GetUserArtist)
-		userGroup.GET("/:user_id/like/music", userController.GetUserLikeSong)
+		userGroup.GET("/:user_id/like/song", userController.GetUserLikeSong)
 		userGroup.GET("/:user_id/playlist", userController.GetUserPlaylist)
+		userGroup.GET("/:user_id/like/playlist", userController.GetUserLikePlaylist)
 	}
 
 	// 动态相关路由
