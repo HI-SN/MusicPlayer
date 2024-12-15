@@ -14,6 +14,13 @@ func (ups *UserPlaylistService) CreateUserLikePlaylist(ulp *models.UserLikePlayl
 	return err
 }
 
+// 删除收藏的歌单
+func (ups *UserPlaylistService) DeleteUserLikePlaylist(ulp *models.UserLikePlaylist) error {
+	query := `DELETE FROM user_like_playlist WHERE user_id=? AND playlist_id=?`
+	_, err := database.DB.Exec(query, ulp.UserID, ulp.PlaylistID)
+	return err
+}
+
 // 根据用户id获取我收藏的歌单列表
 func (ups *UserPlaylistService) GetUserLikePlaylistList(userID string) ([]int, error) {
 	// 执行查询

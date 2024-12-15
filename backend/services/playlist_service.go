@@ -8,7 +8,7 @@ import (
 // PlaylistService 定义播放列表相关的服务函数
 type PlaylistService struct{}
 
-// CreatePlaylist 在数据库中创建新播放列表
+// CreatePlaylist 在数据库中创建新歌单
 func (p *PlaylistService) CreatePlaylist(playlist *models.Playlist) error {
 	query := "INSERT INTO playlist_info (title, user_id, created_at, description, type, hits, cover_url) VALUES (?, ?, ?, ?, ?, ?, ?)"
 	result, err := database.DB.Exec(query, playlist.Title, playlist.User_id, playlist.Create_at, playlist.Description, playlist.Type, playlist.Hits, playlist.Cover_url)
@@ -26,6 +26,13 @@ func (p *PlaylistService) CreatePlaylist(playlist *models.Playlist) error {
 	playlist.Playlist_id = int(playlistID)
 
 	return nil
+}
+
+// 删除歌单
+func (p *PlaylistService) DeletePlaylistByID(playlistID int, user_id string) error {
+	query := "DELETE FROM playlist_info WHERE id=? and user_id=?"
+	_, err := database.DB.Exec(query, playlistID, user_id)
+	return err
 }
 
 // GetPlaylistByID 根据播放列表ID获取播放列表信息

@@ -721,6 +721,51 @@ func (uc *UserController) GetUserArtist(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户歌手列表", "artistList": pagedFollowingList})
 }
 
+// 新增喜欢的歌曲
+func (uc *UserController) LikeSong(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+	song_id, _ := strconv.Atoi(c.Param("song_id"))
+	uls := &models.UserLikeSong{
+		UserID: userID,
+		SongID: song_id,
+	}
+	err := uc.USService.CreateUserLikeSong(uls)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "CreateUserLikeSong faild"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "喜欢歌曲成功"})
+}
+
+// 取消喜欢歌曲
+
+func (uc *UserController) UnlikeSong(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+	song_id, _ := strconv.Atoi(c.Param("song_id"))
+	uls := &models.UserLikeSong{
+		UserID: userID,
+		SongID: song_id,
+	}
+	err := uc.USService.DeleteUserLikeSong(uls)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "DeleteUserLikeSong faild"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "取消喜欢歌曲成功"})
+}
+
 // 获取用户喜欢的歌曲列表
 func (uc *UserController) GetUserLikeSong(c *gin.Context) {
 	// 先获取我喜欢的歌曲的id列表
@@ -821,6 +866,26 @@ func (uc *UserController) CreatePlaylist(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "创建歌单成功", "playlist_id": playlist.Playlist_id})
 }
 
+// 删除歌单
+
+func (uc *UserController) DeletePlaylist(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
+	playlist_id, _ := strconv.Atoi(c.Param("playlist_id"))
+	err := uc.PService.DeletePlaylistByID(playlist_id, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "DeletePlaylistByID faild"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "删除创建歌单成功", "user_id": userID, "playlist_id": playlist_id})
+}
+
 // 获取用户创建的歌单列表
 func (uc *UserController) GetUserPlaylist(c *gin.Context) {
 	playLists, err := uc.PService.GetPlaylistByUserID(c.Param("user_id"))
@@ -851,6 +916,28 @@ func (uc *UserController) LikePlaylist(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "收藏歌单成功"})
+}
+
+// 用户取消收藏歌单
+func (uc *UserController) UnlikePlaylist(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+	playlist_id, _ := strconv.Atoi(c.Param("playlist_id"))
+	ulp := &models.UserLikePlaylist{
+		UserID:     userID,
+		PlaylistID: playlist_id,
+	}
+	err := uc.UPService.DeleteUserLikePlaylist(ulp)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "CreateUserLikePlaylist failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "取消收藏歌单成功"})
 }
 
 // 获取用户收藏的歌单列表
