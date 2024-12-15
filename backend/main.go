@@ -20,6 +20,15 @@ func main() {
 
 	// 获取初始化的数据库
 	database.InitDB()
+
+	// Aservice := &services.ArtistService{}
+	// artist, err := Aservice.GetArtist(8)
+	// if err != nil {
+	// fmt.Println("err:", err)
+	// } else {
+	// fmt.Println(artist)
+	// }
+
 	// 延迟关闭数据库
 	// defer database.CloseDB()
 

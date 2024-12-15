@@ -18,13 +18,18 @@ import (
 
 // UserController 定义用户相关的处理函数
 type UserController struct {
-	Service    *services.UserService
-	FService   *services.FollowService
-	MService   *services.MomentService
-	Aservice   *services.ArtistService
-	SetService *services.SettingService
+	Service     *services.UserService
+	FService    *services.FollowService
+	MService    *services.MomentService
+	Aservice    *services.ArtistService
+	SetService  *services.SettingService
+	USService   *services.UserSongService
+	SongService *services.SongService
+	ABService   *services.AlbumService
+	ASService   *services.ArtistSongService
 }
 
+// 以下是登录页面相关的代码
 // 用户登录
 func (uc *UserController) Login(c *gin.Context) {
 	var a = struct {
@@ -348,6 +353,7 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 // 	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
 // }
 
+// 以下是我的主页相关的代码
 // 获取关注列表
 func (uc *UserController) GetFollowing(c *gin.Context) {
 	// 先获取关注的歌手列表
@@ -515,68 +521,6 @@ func (uc *UserController) GetFollowers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "成功获取粉丝列表", "userList": pagedFollowingList})
 }
 
-// 获取用户基础信息
-func (uc *UserController) GetUserBasic(c *gin.Context) {
-	// 从上下文中获取用户名
-	user_id, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
-		return
-	}
-	userID := user_id.(string)
-
-	user, err := uc.Service.GetUser(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUser failed"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户基础信息", "user": user})
-}
-
-// 获取隐私设置
-func (uc *UserController) GetUserSetting(c *gin.Context) {
-	// 从上下文中获取用户名
-	user_id, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
-		return
-	}
-	userID := user_id.(string)
-
-	setting, err := uc.SetService.GetSetting(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetSetting failed"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户隐私设置", "setting": setting})
-}
-
-// 更新隐私设置
-func (uc *UserController) UpdateUserSetting(c *gin.Context) {
-	// 从上下文中获取用户名
-	user_id, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
-		return
-	}
-	userID := user_id.(string)
-
-	var setting models.Setting
-	// 绑定 JSON 到结构体
-	if err := c.ShouldBind(&setting); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
-		return
-	}
-
-	setting.UserID = userID
-	err := uc.SetService.UpdateSetting(&setting)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "UpdateSetting failed"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "设置更新成功", "setting": setting})
-}
-
 // 关注其他用户
 func (uc *UserController) FollowUser(c *gin.Context) {
 	// 从上下文中获取用户名
@@ -665,6 +609,70 @@ func (uc *UserController) UnfollowArtist(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "取消关注歌手成功"})
 }
 
+// 以下是设置页面的相关代码
+// 获取用户基础信息
+func (uc *UserController) GetUserBasic(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
+	user, err := uc.Service.GetUser(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUser failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户基础信息", "user": user})
+}
+
+// 获取隐私设置
+func (uc *UserController) GetUserSetting(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
+	setting, err := uc.SetService.GetSetting(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetSetting failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户隐私设置", "setting": setting})
+}
+
+// 更新隐私设置
+func (uc *UserController) UpdateUserSetting(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
+	var setting models.Setting
+	// 绑定 JSON 到结构体
+	if err := c.ShouldBind(&setting); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
+		return
+	}
+
+	setting.UserID = userID
+	err := uc.SetService.UpdateSetting(&setting)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "UpdateSetting failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "设置更新成功", "setting": setting})
+}
+
+// 以下是我的音乐页面的相关代码
 // 获取用户歌手列表
 func (uc *UserController) GetUserArtist(c *gin.Context) {
 	// 先获取关注的歌手列表
@@ -709,6 +717,80 @@ func (uc *UserController) GetUserArtist(c *gin.Context) {
 	}
 	pagedFollowingList := artistList[startIndex:endIndex]
 	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户歌手列表", "artistList": pagedFollowingList})
+}
+
+// 获取用户喜欢的歌曲列表
+func (uc *UserController) GetUserLikeSong(c *gin.Context) {
+	// 先获取我喜欢的歌曲的id列表
+	songIDs, err := uc.USService.GetUserLikeSongList(c.Param("user_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserLikeSongList failed"})
+		return
+	}
+	var songList []*models.NewUserLikeSong
+	for _, id := range songIDs {
+		// 根据歌曲id获取歌曲信息、歌手信息、专辑信息
+		song, err := uc.SongService.GetSongByID(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetSongByID failed"})
+			return
+		}
+		album, err := uc.ABService.GetAlbumByID(song.Album_id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetAlbumByID failed"})
+			return
+		}
+		artistIDs, err := uc.ASService.GetArtistListBySongID(song.Song_id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetArtistListBySongID failed"})
+			return
+		}
+
+		uLikeSong := &models.NewUserLikeSong{
+			Song:         *song,
+			Album_name:   album.Name,
+			Artist_ids:   make([]int, 0),    // 初始化切片
+			Artist_names: make([]string, 0), // 初始化切片
+		}
+
+		for _, artistID := range artistIDs {
+			artist, err := uc.Aservice.GetArtist(artistID)
+			if err != nil {
+				// 记录错误信息，但不中断流程
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error":   err,
+					"message": "GetArtist failed",
+					"id":      artistID,
+					"artist":  artist,
+					"list":    uLikeSong,
+				})
+				continue // 跳过当前歌手，继续处理下一个
+			}
+			// 确保 artist 不为 nil 后再访问其字段
+			if artist != nil {
+				uLikeSong.Artist_ids = append(uLikeSong.Artist_ids, artistID)
+				uLikeSong.Artist_names = append(uLikeSong.Artist_names, artist.Name)
+			}
+		}
+
+		songList = append(songList, uLikeSong)
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	page_size, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+
+	// 合并列表并分页
+	startIndex := (page - 1) * page_size
+	endIndex := startIndex + page_size
+	if startIndex >= len(songList) {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有数据范围", "songList": []interface{}{}})
+		return
+	}
+	if endIndex > len(songList) {
+		endIndex = len(songList)
+	}
+	pagedSongList := songList[startIndex:endIndex]
+	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户喜欢的歌曲列表", "songList": pagedSongList})
 }
 
 // 一些辅助函数

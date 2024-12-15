@@ -28,11 +28,15 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	userController := &controllers.UserController{
-		Service:    &services.UserService{},
-		FService:   &services.FollowService{},
-		MService:   &services.MomentService{},
-		Aservice:   &services.ArtistService{},
-		SetService: &services.SettingService{},
+		Service:     &services.UserService{},
+		FService:    &services.FollowService{},
+		MService:    &services.MomentService{},
+		Aservice:    &services.ArtistService{},
+		SetService:  &services.SettingService{},
+		USService:   &services.UserSongService{},
+		SongService: &services.SongService{},
+		ABService:   &services.AlbumService{},
+		ASService:   &services.ArtistSongService{},
 	}
 	emailController := &controllers.EmailController{}
 	momentController := &controllers.MomentController{
@@ -93,6 +97,7 @@ func SetupRoutes(r *gin.Engine) {
 		userGroup.GET("/:user_id/following", userController.GetFollowing)
 		userGroup.GET("/:user_id/followers", userController.GetFollowers)
 		userGroup.GET("/:user_id/artist", userController.GetUserArtist)
+		userGroup.GET("/:user_id/like/music", userController.GetUserLikeSong)
 	}
 
 	// 动态相关路由

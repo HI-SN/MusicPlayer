@@ -5,17 +5,17 @@ import (
 )
 
 type Song struct {
-	Song_id      int
-	Title        string
-	Duration     int
-	Album_id     int
-	Genre        string
-	Release_date time.Time
-	Song_url     string
-	Lyrics       string
-	Created_at   time.Time
-	Updated_at   time.Time
-	Song_hit     int
+	Song_id      int       `json:"song_id"`
+	Title        string    `json:"title"`
+	Duration     int       `json:"duration"`
+	Album_id     int       `json:"album_id"`
+	Genre        string    `json:"genre"`
+	Release_date time.Time `json:"release_date"`
+	Song_url     string    `json:"song_url"`
+	Lyrics       string    `json:"lyrics"`
+	Created_at   time.Time `json:"created_at"`
+	Updated_at   time.Time `json:"updated_at"`
+	Song_hit     int       `json:"song_hit"`
 }
 
 // func (Song) TableName() string {

@@ -1,2 +1,2 @@
 # backend/controllers
-controllers\comment_controller.go:196:2: declared and not used: count
+controllers\user_controller.go:729:3: syntax error: unexpected var at end of statement
