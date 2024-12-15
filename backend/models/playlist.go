@@ -10,6 +10,7 @@ type Playlist struct {
 	Description string
 	Type        string
 	Hits        int
+	Cover_url   string
 }
 
 func (Playlist) TableName() string {

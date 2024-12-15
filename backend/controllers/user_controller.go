@@ -27,6 +27,7 @@ type UserController struct {
 	SongService *services.SongService
 	ABService   *services.AlbumService
 	ASService   *services.ArtistSongService
+	PService    *services.PlaylistService
 }
 
 // 以下是登录页面相关的代码
@@ -792,6 +793,44 @@ func (uc *UserController) GetUserLikeSong(c *gin.Context) {
 	pagedSongList := songList[startIndex:endIndex]
 	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户喜欢的歌曲列表", "songList": pagedSongList})
 }
+
+// 用户创建歌单
+func (uc *UserController) CreatePlaylist(c *gin.Context) {
+	// 从上下文中获取用户名
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
+
+	var playlist models.Playlist
+	// 绑定 JSON 到结构体
+	if err := c.ShouldBind(&playlist); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": "ShouldBindJSON"})
+		return
+	}
+	playlist.Create_at = time.Now()
+	playlist.User_id = userID
+	err := uc.PService.CreatePlaylist(&playlist)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "CreatePlaylist faild"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "创建歌单成功", "playlist_id": playlist.Playlist_id})
+}
+
+// 获取用户创建的歌单列表
+func (uc *UserController) GetUserPlaylist(c *gin.Context) {
+	playLists, err := uc.PService.GetPlaylistByUserID(c.Param("user_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "GetPlaylistByUserID failed", "playList": playLists})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户创建的歌单列表", "playlist": playLists})
+}
+
+// 获取用户收藏的歌单列表
 
 // 一些辅助函数
 // 校验邮箱验证码

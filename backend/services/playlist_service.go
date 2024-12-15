@@ -10,9 +10,22 @@ type PlaylistService struct{}
 
 // CreatePlaylist 在数据库中创建新播放列表
 func (p *PlaylistService) CreatePlaylist(playlist *models.Playlist) error {
-	query := "INSERT INTO playlist_info (title, user_id, create_at, description, type, hits) VALUES ($1, $2, $3, $4, $5, $6) RETURNING playlist_id"
-	err := database.DB.QueryRow(query, playlist.Title, playlist.User_id, playlist.Create_at, playlist.Description, playlist.Type, playlist.Hits).Scan(&playlist.Playlist_id)
-	return err
+	query := "INSERT INTO playlist_info (title, user_id, created_at, description, type, hits, cover_url) VALUES (?, ?, ?, ?, ?, ?, ?)"
+	result, err := database.DB.Exec(query, playlist.Title, playlist.User_id, playlist.Create_at, playlist.Description, playlist.Type, playlist.Hits, playlist.Cover_url)
+	if err != nil {
+		return err
+	}
+
+	// 获取插入后的自增主键
+	playlistID, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	// 将自增主键赋值给 playlist.Playlist_id
+	playlist.Playlist_id = int(playlistID)
+
+	return nil
 }
 
 // GetPlaylistByID 根据播放列表ID获取播放列表信息
@@ -57,4 +70,23 @@ func (p *PlaylistService) RemoveSongFromPlaylist(playlistID, songID int) error {
 // GetSongsByPlaylistID 获取播放列表中的所有歌曲
 func (p *PlaylistService) GetSongsByPlaylistID(playlistID int) ([]int, error) {
 	return (&SongPlaylistRelationService{}).GetSongsByPlaylistID(playlistID)
+}
+
+func (p *PlaylistService) GetPlaylistByUserID(userID string) ([]models.Playlist, error) {
+	var playlists []models.Playlist
+	query := "SELECT id, title, user_id, created_at, description, type, hits, cover_url FROM playlist_info WHERE user_id=?"
+	rows, err := database.DB.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var playlist models.Playlist
+		err := rows.Scan(&playlist.Playlist_id, &playlist.Title, &playlist.User_id, &playlist.Create_at, &playlist.Description, &playlist.Type, &playlist.Hits, &playlist.Cover_url)
+		if err != nil {
+			return nil, err
+		}
+		playlists = append(playlists, playlist)
+	}
+	return playlists, nil
 }
