@@ -1,53 +1,402 @@
 package controllers
 
 import (
-	"backend/models"
 	"backend/services"
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
+
+	"path/filepath"
+
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-// SongController 定义歌曲相关的处理函数
 type SongController struct {
-	Service *services.SongService
+	SongService *services.SongService
 }
 
-// CreateSong 处理创建歌曲请求
-func (sc *SongController) CreateSong(c *gin.Context) {
-	var song models.Song
-
-	// 绑定 JSON 到结构体
-	if err := c.ShouldBindJSON(&song); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+func NewSongController(songService *services.SongService) *SongController {
+	return &SongController{
+		SongService: songService,
 	}
-
-	// 调用服务层函数
-	err := sc.Service.CreateSong(&song)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Song created", "song": song})
 }
 
-// GetSong 处理获取歌曲请求
-func (sc *SongController) GetSong(c *gin.Context) {
-	songID, err := strconv.Atoi(c.Param("song_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid song ID"})
+// getAudioDuration 获取音频文件的时长（秒）需要下载ffmpeg
+func getAudioDuration(filePath string) (int, error) {
+	// // 使用 ffmpeg 获取音频文件时长
+	// cmd := fmt.Sprintf("ffmpeg -i %s 2>&1 | grep 'Duration' | cut -d ' ' -f 4 | sed s/,//", filePath)
+	// command := exec.Command("/bin/bash", "-c", cmd)
+	// res, err := command.CombinedOutput()
+	// if err != nil {
+	// 	return 0, fmt.Errorf("failed to execute command: %v, output: %s", err, string(res))
+	// }
+
+	// body := string(res)
+	// if !strings.Contains(body, ":") {
+	// 	return 0, fmt.Errorf("invalid duration format in output: %s", body)
+	// }
+
+	// timeArr := strings.Split(body, ":")
+	// if len(timeArr) != 3 {
+	// 	return 0, fmt.Errorf("invalid duration format in output: %s", body)
+	// }
+
+	// hour, err := strconv.ParseFloat(timeArr[0], 64)
+	// if err != nil {
+	// 	return 0, fmt.Errorf("failed to parse hours: %v", err)
+	// }
+	// min, err := strconv.ParseFloat(timeArr[1], 64)
+	// if err != nil {
+	// 	return 0, fmt.Errorf("failed to parse minutes: %v", err)
+	// }
+	// second, err := strconv.ParseFloat(timeArr[2], 64)
+	// if err != nil {
+	// 	return 0, fmt.Errorf("failed to parse seconds: %v", err)
+	// }
+
+	// duration := int(3600*hour + 60*min + second)
+	duration := 300
+	return duration, nil
+}
+
+// CreateSong 创建歌曲
+func (c *SongController) CreateSong(ctx *gin.Context) {
+	var request struct {
+		Title       string `form:"title" binding:"required"`
+		ArtistID    int    `form:"artist_id" binding:"required"`
+		Duration    int    `form:"duration"`
+		AlbumID     int    `form:"album_id"`
+		Genre       string `form:"genre"`
+		ReleaseDate string `form:"release_date" binding:"required"`
+	}
+
+	// 绑定请求体
+	if err := ctx.ShouldBind(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 调用服务层函数
-	song, err := sc.Service.GetSongByID(songID)
+	// 将字符串日期转换为 time.Time
+	parsedDate, err := time.Parse("2006-01-02", request.ReleaseDate)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid release_date format, expected YYYY-MM-DD"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Song retrieved", "song": song})
+	// 处理音频文件上传
+	audioFile, err := ctx.FormFile("audio")
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "audio file is required"})
+		return
+	}
+
+	// 保存音频文件到 /uploads/audio
+	audioDir := "uploads/audio"
+	if err := os.MkdirAll(audioDir, 0755); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create audio directory"})
+		return
+	}
+
+	// 调用服务层创建歌曲
+	songID, err := c.SongService.CreateSong(request.Title, request.ArtistID, request.Duration, request.AlbumID, request.Genre, parsedDate, "", "")
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 生成唯一的音频文件名
+	audioExt := filepath.Ext(audioFile.Filename)
+	audioFileName := fmt.Sprintf("audio_%d%s", songID, audioExt)
+	audioFilePath := filepath.Join(audioDir, audioFileName)
+	if err := ctx.SaveUploadedFile(audioFile, audioFilePath); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save audio file"})
+		return
+	}
+
+	// 获取音频文件的时长
+	duration, err := getAudioDuration(audioFilePath)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get audio duration"})
+		return
+	}
+
+	// 更新歌曲的音频文件路径和时长
+	err = c.SongService.UpdateSongInfo(int(songID), request.Title, duration, request.AlbumID, request.Genre, parsedDate, audioFilePath, "")
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 处理歌词文件上传（可选）
+	lyricsFile, err := ctx.FormFile("lyrics")
+	if err == nil {
+		// 保存歌词文件到 /uploads/lyrics
+		lyricsDir := "uploads/lyrics"
+		if err := os.MkdirAll(lyricsDir, 0755); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create lyrics directory"})
+			return
+		}
+
+		// 生成唯一的歌词文件名
+		lyricsExt := filepath.Ext(lyricsFile.Filename)
+		lyricsFileName := fmt.Sprintf("lyrics_%d%s", songID, lyricsExt)
+		lyricsFilePath := filepath.Join(lyricsDir, lyricsFileName)
+		if err := ctx.SaveUploadedFile(lyricsFile, lyricsFilePath); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save lyrics file"})
+			return
+		}
+
+		// 更新歌曲的歌词文件路径
+		err = c.SongService.UploadLyricsBySongID(int(songID), lyricsFilePath)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{"message": "song created successfully", "song_id": songID})
+}
+
+// GetSongByID retrieves a song by its ID
+func (c *SongController) GetSongByID(ctx *gin.Context) {
+	songID, err := strconv.Atoi(ctx.Param("song_id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid song ID"})
+		return
+	}
+
+	song, artistName, err := c.SongService.GetSongByID(songID)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"song":        song,
+		"artist_name": artistName,
+	})
+}
+
+// UpdateSongInfo 更新歌曲信息
+func (c *SongController) UpdateSongInfo(ctx *gin.Context) {
+	songID, err := strconv.Atoi(ctx.Param("song_id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid song ID"})
+		return
+	}
+
+	var request struct {
+		Title       string `json:"title"`
+		Duration    int    `json:"duration"`
+		AlbumID     int    `json:"album_id"`
+		Genre       string `json:"genre"`
+		ReleaseDate string `json:"release_date"`
+		SongURL     string `json:"song_url"`
+		Lyrics      string `json:"lyrics"`
+	}
+
+	if err := ctx.ShouldBindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 将字符串日期转换为 time.Time
+	parsedDate, err := time.Parse("2006-01-02", request.ReleaseDate)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid release_date format, expected YYYY-MM-DD"})
+		return
+	}
+
+	// 处理音频文件上传（可选）
+	audioFile, err := ctx.FormFile("audio")
+	if err == nil {
+		// 保存音频文件到 /uploads/audio
+		audioDir := "uploads/audio"
+		if err := os.MkdirAll(audioDir, 0755); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create audio directory"})
+			return
+		}
+
+		// 生成唯一的音频文件名
+		audioExt := filepath.Ext(audioFile.Filename)
+		audioFileName := fmt.Sprintf("audio_%d%s", songID, audioExt)
+		audioFilePath := filepath.Join(audioDir, audioFileName)
+		if err := ctx.SaveUploadedFile(audioFile, audioFilePath); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save audio file"})
+			return
+		}
+
+		// 获取音频文件的时长
+		duration, err := getAudioDuration(audioFilePath)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get audio duration"})
+			return
+		}
+
+		// 更新音频文件路径和时长
+		request.SongURL = audioFilePath
+		request.Duration = duration
+	}
+
+	// 处理歌词文件上传（可选）
+	lyricsFile, err := ctx.FormFile("lyrics")
+	if err == nil {
+		// 保存歌词文件到 /uploads/lyrics
+		lyricsDir := "uploads/lyrics"
+		if err := os.MkdirAll(lyricsDir, 0755); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create lyrics directory"})
+			return
+		}
+
+		// 生成唯一的歌词文件名
+		lyricsExt := filepath.Ext(lyricsFile.Filename)
+		lyricsFileName := fmt.Sprintf("lyrics_%d%s", songID, lyricsExt)
+		lyricsFilePath := filepath.Join(lyricsDir, lyricsFileName)
+
+		// 删除旧歌词文件（如果存在）
+		if _, err := os.Stat(lyricsFilePath); err == nil {
+			if err := os.Remove(lyricsFilePath); err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete old lyrics file"})
+				return
+			}
+		}
+
+		// 保存新歌词文件
+		if err := ctx.SaveUploadedFile(lyricsFile, lyricsFilePath); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save lyrics file"})
+			return
+		}
+
+		// 更新歌词文件路径
+		request.Lyrics = lyricsFilePath
+	}
+
+	// 调用服务层更新歌曲信息
+	err = c.SongService.UpdateSongInfo(songID, request.Title, request.Duration, request.AlbumID, request.Genre, parsedDate, request.SongURL, request.Lyrics)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "song updated successfully"})
+}
+
+// UploadLyricsBySongID uploads lyrics for a song
+func (c *SongController) UploadLyricsBySongID(ctx *gin.Context) {
+	songID, err := strconv.Atoi(ctx.Param("song_id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid song ID"})
+		return
+	}
+
+	// 获取上传的歌词文件
+	lyricsFile, err := ctx.FormFile("lyrics")
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "lyrics file is required"})
+		return
+	}
+
+	// 保存歌词文件到 /uploads/lyrics
+	lyricsDir := "uploads/lyrics"
+	if err := os.MkdirAll(lyricsDir, 0755); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create lyrics directory"})
+		return
+	}
+
+	// 生成唯一的歌词文件名
+	lyricsExt := filepath.Ext(lyricsFile.Filename)
+	lyricsFileName := fmt.Sprintf("lyrics_%d%s", songID, lyricsExt)
+	lyricsFilePath := filepath.Join(lyricsDir, lyricsFileName)
+	if err := ctx.SaveUploadedFile(lyricsFile, lyricsFilePath); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save lyrics file"})
+		return
+	}
+
+	// 更新歌曲的歌词文件路径
+	err = c.SongService.UploadLyricsBySongID(int(songID), lyricsFilePath)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "lyrics uploaded successfully"})
+}
+
+// DownloadAudioBySongID downloads the audio file of a song
+func (c *SongController) DownloadAudioBySongID(ctx *gin.Context) {
+	songID, err := strconv.Atoi(ctx.Param("song_id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid song ID"})
+		return
+	}
+
+	filePath, err := c.SongService.DownloadAudioBySongID(songID)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 检查文件是否存在
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "audio file not found"})
+		return
+	}
+
+	ctx.File(filePath)
+}
+
+// DownloadLyricsBySongID downloads the lyrics of a song
+func (c *SongController) DownloadLyricsBySongID(ctx *gin.Context) {
+	songID, err := strconv.Atoi(ctx.Param("song_id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid song ID"})
+		return
+	}
+
+	lyrics, err := c.SongService.DownloadLyricsBySongID(songID)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.String(http.StatusOK, lyrics)
+}
+
+// DeleteSongByID 删除歌曲
+func (c *SongController) DeleteSongByID(ctx *gin.Context) {
+	songID, err := strconv.Atoi(ctx.Param("song_id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid song ID"})
+		return
+	}
+
+	// 调用服务层删除歌曲
+	err = c.SongService.DeleteSongByID(songID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "song deleted successfully"})
+}
+
+// GetCommentsBySongID 获取歌曲相关评论
+func (c *SongController) GetCommentsBySongID(ctx *gin.Context) {
+	songID, err := strconv.Atoi(ctx.Param("song_id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid song ID"})
+		return
+	}
+
+	// 调用服务层获取评论
+	comments, err := c.SongService.GetCommentsBySongID(songID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"comments": comments})
 }

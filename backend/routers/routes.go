@@ -12,7 +12,7 @@ func SetupRoutes(r *gin.Engine) {
 
 	// 实例化控制器和服务
 	songController := &controllers.SongController{
-		Service: &services.SongService{},
+		SongService: &services.SongService{},
 	}
 	albumController := &controllers.AlbumController{
 		Service: &services.AlbumService{},
@@ -20,11 +20,11 @@ func SetupRoutes(r *gin.Engine) {
 	playerController := &controllers.PlayerController{
 		Service: &services.PlayerService{},
 	}
-	uploadController := &controllers.UploadController{
-		Service: &services.UploadService{},
-	}
 	playlistController := &controllers.PlaylistController{
 		Service: &services.PlaylistService{},
+	}
+	artistController := &controllers.ArtistController{
+		ArtistSongService: &services.ArtistSongService{},
 	}
 
 	userController := &controllers.UserController{
@@ -36,9 +36,9 @@ func SetupRoutes(r *gin.Engine) {
 		USService:   &services.UserSongService{},
 		SongService: &services.SongService{},
 		ABService:   &services.AlbumService{},
-		ASService:   &services.ArtistSongService{},
-		PService:    &services.PlaylistService{},
-		UPService:   &services.UserPlaylistService{},
+		// ASService:   &services.ArtistSongService{},
+		PService:  &services.PlaylistService{},
+		UPService: &services.UserPlaylistService{},
 	}
 	emailController := &controllers.EmailController{}
 	momentController := &controllers.MomentController{
@@ -131,7 +131,13 @@ func SetupRoutes(r *gin.Engine) {
 	songGroup := r.Group("/songs")
 	{
 		songGroup.POST("/create", songController.CreateSong)
-		songGroup.GET("/:song_id", songController.GetSong)
+		songGroup.GET("/:song_id", songController.GetSongByID)
+		songGroup.PUT("/update/:song_id", songController.UpdateSongInfo)
+		songGroup.POST("/:song_id/upload/lyrics", songController.UploadLyricsBySongID)
+		songGroup.GET("/:song_id/download/audio", songController.DownloadAudioBySongID)
+		songGroup.GET("/:song_id/download/lyrics", songController.DownloadLyricsBySongID)
+		songGroup.DELETE("/delete/:song_id", songController.DeleteSongByID)
+		songGroup.GET("/:song_id/comments", songController.GetCommentsBySongID)
 	}
 
 	// 专辑相关路由
@@ -139,8 +145,17 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		albumGroup.POST("/create", albumController.CreateAlbum)
 		albumGroup.GET("/:album_id", albumController.GetAlbum)
+		albumGroup.PUT("/update/:album_id", albumController.UpdateAlbum)
+		albumGroup.DELETE("/delete/:album_id", albumController.DeleteAlbum)
+		albumGroup.POST("/:album_id/cover", albumController.UploadAlbumCover)
 	}
 
+	// 艺术家相关路由
+	artistGroup := r.Group("/artists")
+	{
+		artistGroup.POST("/add-to-song", artistController.AddArtistToSong)
+		artistGroup.GET("/:artist_id/songs", artistController.GetSongsByArtistID)
+	}
 	// 播放器相关路由
 	playerGroup := r.Group("/player")
 	{
@@ -148,24 +163,20 @@ func SetupRoutes(r *gin.Engine) {
 		playerGroup.GET("/pause/:song_id", playerController.PauseSong)
 		playerGroup.GET("/resume/:song_id", playerController.ResumeSong)
 		playerGroup.GET("/volume/:song_id/:volume", playerController.AdjustVolume)
+		playerGroup.GET("/lyric/:song_id", playerController.ShowLyrics)
 	}
 
-	// 上传相关路由
-	uploadGroup := r.Group("/upload")
-	{
-		uploadGroup.POST("/audio", uploadController.UploadAudio)
-		uploadGroup.POST("/song-info", uploadController.UploadSongInfo)
-		uploadGroup.POST("/lyrics/:song_id", uploadController.UploadLyrics)
-	}
 	// 播放列表相关路由
 	playlistGroup := r.Group("/playlists")
 	{
 		playlistGroup.POST("/", playlistController.CreatePlaylist)
 		playlistGroup.GET("/:playlist_id", playlistController.GetPlaylist)
-		playlistGroup.PUT("/:playlist_id", playlistController.UpdatePlaylist)
+		playlistGroup.PUT("/update/:playlist_id", playlistController.UpdatePlaylist)
 		playlistGroup.DELETE("/:playlist_id", playlistController.DeletePlaylist)
 		playlistGroup.POST("/:playlist_id/add/:song_id", playlistController.AddSongToPlaylist)
 		playlistGroup.DELETE("/:playlist_id/remove/:song_id", playlistController.RemoveSongFromPlaylist)
 		playlistGroup.GET("/:playlist_id/songs", playlistController.GetSongsByPlaylistID)
+		playlistGroup.POST("/:playlist_id/updatecover", playlistController.UploadPlaylistCover)
+		playlistGroup.GET("/recommend", playlistController.GetPlaylistsByType)
 	}
 }

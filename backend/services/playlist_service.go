@@ -3,13 +3,51 @@ package services
 import (
 	"backend/database"
 	"backend/models"
+	"fmt"
+	"time"
 )
 
 // PlaylistService 定义播放列表相关的服务函数
 type PlaylistService struct{}
 
+// CheckPlaylistExists 检查播放列表是否存在
+func (p *PlaylistService) CheckPlaylistExists(playlistID int) (bool, error) {
+	var exists bool
+	query := "SELECT EXISTS(SELECT 1 FROM playlist_info WHERE id = ?)"
+	err := database.DB.QueryRow(query, playlistID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+// CheckUserExists 检查用户是否存在
+func (p *PlaylistService) CheckUserExists(userID string) (bool, error) {
+	var exists bool
+	query := "SELECT EXISTS(SELECT 1 FROM user_info WHERE user_id = ?)"
+	err := database.DB.QueryRow(query, userID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
 // CreatePlaylist 在数据库中创建新歌单
 func (p *PlaylistService) CreatePlaylist(playlist *models.Playlist) error {
+	// 检查用户是否存在
+	exists, err := p.CheckUserExists(playlist.User_id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("user with ID %s does not exist", playlist.User_id)
+	}
+
+	// 如果 created_at 为空，则设置为当前时间
+	if playlist.Create_at.IsZero() {
+		playlist.Create_at = time.Now()
+	}
+
 	query := "INSERT INTO playlist_info (title, user_id, created_at, description, type, hits, cover_url) VALUES (?, ?, ?, ?, ?, ?, ?)"
 	result, err := database.DB.Exec(query, playlist.Title, playlist.User_id, playlist.Create_at, playlist.Description, playlist.Type, playlist.Hits, playlist.Cover_url)
 	if err != nil {
@@ -30,53 +68,210 @@ func (p *PlaylistService) CreatePlaylist(playlist *models.Playlist) error {
 
 // 删除歌单
 func (p *PlaylistService) DeletePlaylistByID(playlistID int, user_id string) error {
+	// 检查播放列表是否存在
+	exists, err := p.CheckPlaylistExists(playlistID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("playlist with ID %d does not exist", playlistID)
+	}
+
+	// 检查用户是否存在
+	exists, err = p.CheckUserExists(user_id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("user with ID %s does not exist", user_id)
+	}
+
 	query := "DELETE FROM playlist_info WHERE id=? and user_id=?"
-	_, err := database.DB.Exec(query, playlistID, user_id)
+	_, err = database.DB.Exec(query, playlistID, user_id)
 	return err
 }
 
-// GetPlaylistByID 根据播放列表ID获取播放列表信息
-func (p *PlaylistService) GetPlaylistByID(playlistID int) (*models.Playlist, error) {
-	playlist := &models.Playlist{}
-	query := "SELECT playlist_id, title, user_id, create_at, description, type, hits FROM playlist_info WHERE playlist_id=$1"
-	err := database.DB.QueryRow(query, playlistID).Scan(&playlist.Playlist_id, &playlist.Title, &playlist.User_id, &playlist.Create_at, &playlist.Description, &playlist.Type, &playlist.Hits)
+// GetPlaylistByID 根据播放列表ID获取播放列表信息，包括歌曲信息和用户是否like的信息
+func (p *PlaylistService) GetPlaylistByID(playlistID int) (*models.Playlist, []models.Song, bool, error) {
+	// 检查播放列表是否存在
+	exists, err := p.CheckPlaylistExists(playlistID)
 	if err != nil {
-		return nil, err
+		return nil, nil, false, err
 	}
-	return playlist, nil
+	if !exists {
+		return nil, nil, false, fmt.Errorf("playlist with ID %d does not exist", playlistID)
+	}
+
+	// 获取歌单基本信息
+	playlist := &models.Playlist{}
+	query := "SELECT id, title, user_id, created_at, description, type, hits, cover_url FROM playlist_info WHERE id=?"
+	err = database.DB.QueryRow(query, playlistID).Scan(&playlist.Playlist_id, &playlist.Title, &playlist.User_id, &playlist.Create_at, &playlist.Description, &playlist.Type, &playlist.Hits, &playlist.Cover_url)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("failed to get playlist: %v", err)
+	}
+
+	// 获取歌单中的歌曲信息
+	songs, err := p.getSongsByPlaylistID(playlistID)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("failed to get songs: %v", err)
+	}
+
+	// 获取用户是否like歌单的信息
+	var isLiked bool
+	query = "SELECT EXISTS(SELECT 1 FROM user_like_playlist WHERE playlist_id = ?)"
+	err = database.DB.QueryRow(query, playlistID).Scan(&isLiked)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("failed to check if playlist is liked: %v", err)
+	}
+
+	return playlist, songs, isLiked, nil
+}
+
+// getSongsByPlaylistID 获取歌单中的歌曲信息
+func (p *PlaylistService) getSongsByPlaylistID(playlistID int) ([]models.Song, error) {
+	var songs []models.Song
+
+	// 查询歌单中的歌曲
+	query := `
+		SELECT s.id, s.title, s.duration, s.album_id, s.genre, s.release_date, s.song_url, s.lyrics, s.created_at, s.updated_at, s.song_hit
+		FROM song_info s
+		JOIN song_playlist_relation spr ON s.id = spr.song_id
+		WHERE spr.playlist_id = ?
+	`
+	rows, err := database.DB.Query(query, playlistID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query songs: %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var song models.Song
+		err := rows.Scan(&song.Song_id, &song.Title, &song.Duration, &song.Album_id, &song.Genre, &song.Release_date, &song.Song_url, &song.Lyrics, &song.Created_at, &song.Updated_at, &song.Song_hit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan song: %v", err)
+		}
+		songs = append(songs, song)
+	}
+
+	return songs, nil
 }
 
 // UpdatePlaylist 更新播放列表信息
 func (p *PlaylistService) UpdatePlaylist(playlist *models.Playlist) error {
-	query := "UPDATE playlist_info SET title=$1, user_id=$2, description=$3, type=$4, hits=$5 WHERE playlist_id=$6"
-	_, err := database.DB.Exec(query, playlist.Title, playlist.User_id, playlist.Description, playlist.Type, playlist.Hits, playlist.Playlist_id)
+	// 检查播放列表是否存在
+	exists, err := p.CheckPlaylistExists(playlist.Playlist_id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("playlist with ID %d does not exist", playlist.Playlist_id)
+	}
+
+	// 检查用户是否存在
+	exists, err = p.CheckUserExists(playlist.User_id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("user with ID %s does not exist", playlist.User_id)
+	}
+
+	query := "UPDATE playlist_info SET title=?, user_id=?, description=?, type=?, hits=?, cover_url=? WHERE id=?"
+	_, err = database.DB.Exec(query, playlist.Title, playlist.User_id, playlist.Description, playlist.Type, playlist.Hits, playlist.Cover_url, playlist.Playlist_id)
 	return err
 }
 
 // DeletePlaylist 删除播放列表
 func (p *PlaylistService) DeletePlaylist(playlistID int) error {
-	query := "DELETE FROM playlist_info WHERE playlist_id=$1"
+	query := "DELETE FROM playlist_info WHERE id=?"
 	_, err := database.DB.Exec(query, playlistID)
 	return err
 }
 
 // AddSongToPlaylist 添加歌曲到播放列表
 func (p *PlaylistService) AddSongToPlaylist(playlistID, songID int) error {
-	relation := &models.SongPlaylistRelation{
-		PlaylistID: playlistID,
-		SongID:     songID,
+	// 检查播放列表是否存在
+	exists, err := p.CheckPlaylistExists(playlistID)
+	if err != nil {
+		return err
 	}
-	return (&SongPlaylistRelationService{}).CreateSongPlaylistRelation(relation)
+	if !exists {
+		return fmt.Errorf("playlist with ID %d does not exist", playlistID)
+	}
+
+	// 检查歌曲是否存在
+	var songExists bool
+	query := "SELECT EXISTS(SELECT 1 FROM song_info WHERE id = ?)"
+	err = database.DB.QueryRow(query, songID).Scan(&songExists)
+	if err != nil {
+		return err
+	}
+	if !songExists {
+		return fmt.Errorf("song with ID %d does not exist", songID)
+	}
+
+	query = "INSERT INTO song_playlist_relation (playlist_id, song_id) VALUES (?, ?)"
+	_, err = database.DB.Exec(query, playlistID, songID)
+	return err
 }
 
 // RemoveSongFromPlaylist 从播放列表移除歌曲
 func (p *PlaylistService) RemoveSongFromPlaylist(playlistID, songID int) error {
-	return (&SongPlaylistRelationService{}).DeleteSongPlaylistRelation(playlistID, songID)
+	// 检查播放列表是否存在
+	exists, err := p.CheckPlaylistExists(playlistID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("playlist with ID %d does not exist", playlistID)
+	}
+
+	// 检查歌曲是否存在
+	var songExists bool
+	query := "SELECT EXISTS(SELECT 1 FROM song_info WHERE id = ?)"
+	err = database.DB.QueryRow(query, songID).Scan(&songExists)
+	if err != nil {
+		return err
+	}
+	if !songExists {
+		return fmt.Errorf("song with ID %d does not exist", songID)
+	}
+
+	query = "DELETE FROM song_playlist_relation WHERE playlist_id=? AND song_id=?"
+	_, err = database.DB.Exec(query, playlistID, songID)
+	return err
 }
 
 // GetSongsByPlaylistID 获取播放列表中的所有歌曲
 func (p *PlaylistService) GetSongsByPlaylistID(playlistID int) ([]int, error) {
-	return (&SongPlaylistRelationService{}).GetSongsByPlaylistID(playlistID)
+	// 检查播放列表是否存在
+	exists, err := p.CheckPlaylistExists(playlistID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, fmt.Errorf("playlist with ID %d does not exist", playlistID)
+	}
+
+	var songIDs []int
+
+	// 使用 ? 作为占位符
+	query := "SELECT song_id FROM song_playlist_relation WHERE playlist_id=?"
+	rows, err := database.DB.Query(query, playlistID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var songID int
+		if err := rows.Scan(&songID); err != nil {
+			return nil, err
+		}
+		songIDs = append(songIDs, songID)
+	}
+
+	return songIDs, nil
 }
 
 // GetPlaylistByUserID 根据用户ID获取用户创建的歌单列表
@@ -108,4 +303,50 @@ func (p *PlaylistService) GetPlaylistByPlaylistID(PlaylistID int) (*models.Playl
 		return nil, err
 	}
 	return playlist, nil
+}
+
+// UpdatePlaylistCover 更新歌单封面 URL
+func (p *PlaylistService) UpdatePlaylistCover(playlistID int, coverURL string) error {
+	// 检查播放列表是否存在
+	exists, err := p.CheckPlaylistExists(playlistID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("playlist with ID %d does not exist", playlistID)
+	}
+
+	// 更新 cover_url
+	query := "UPDATE playlist_info SET cover_url=? WHERE id=?"
+	_, err = database.DB.Exec(query, coverURL, playlistID)
+	return err
+}
+
+// GetPlaylistsByType 根据类型获取推荐歌单（支持模糊匹配）
+func (p *PlaylistService) GetPlaylistsByType(playlistType string, limit int) ([]models.Playlist, error) {
+	var playlists []models.Playlist
+
+	// 如果 limit 未提供或无效，使用默认值 10
+	if limit <= 0 {
+		limit = 10
+	}
+
+	// 使用 LIKE 进行模糊查询
+	query := "SELECT id, title, user_id, created_at, description, type, hits, cover_url FROM playlist_info WHERE type LIKE ? ORDER BY hits DESC LIMIT ?"
+	rows, err := database.DB.Query(query, "%"+playlistType+"%", limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query playlists: %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var playlist models.Playlist
+		err := rows.Scan(&playlist.Playlist_id, &playlist.Title, &playlist.User_id, &playlist.Create_at, &playlist.Description, &playlist.Type, &playlist.Hits, &playlist.Cover_url)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan playlist: %v", err)
+		}
+		playlists = append(playlists, playlist)
+	}
+
+	return playlists, nil
 }

@@ -768,31 +768,43 @@ func (uc *UserController) UnlikeSong(c *gin.Context) {
 
 // 获取用户喜欢的歌曲列表
 func (uc *UserController) GetUserLikeSong(c *gin.Context) {
-	// 先获取我喜欢的歌曲的id列表
-	songIDs, err := uc.USService.GetUserLikeSongList(c.Param("user_id"))
+	// 获取用户 ID
+	userID := c.Param("user_id")
+
+	// 先获取我喜欢的歌曲的 ID 列表
+	songIDs, err := uc.USService.GetUserLikeSongList(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserLikeSongList failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "GetUserLikeSongList failed"})
 		return
 	}
+
+	// 初始化歌曲列表
 	var songList []*models.NewUserLikeSong
+
+	// 遍历歌曲 ID 列表，获取歌曲信息、歌手信息和专辑信息
 	for _, id := range songIDs {
-		// 根据歌曲id获取歌曲信息、歌手信息、专辑信息
-		song, err := uc.SongService.GetSongByID(id)
+		// 根据歌曲 ID 获取歌曲信息和歌手名称
+		song, _, err := uc.SongService.GetSongByID(id)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetSongByID failed"})
-			return
-		}
-		album, err := uc.ABService.GetAlbumByID(song.Album_id)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetAlbumByID failed"})
-			return
-		}
-		artistIDs, err := uc.ASService.GetArtistListBySongID(song.Song_id)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetArtistListBySongID failed"})
-			return
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "GetSongByID failed for song ID: " + strconv.Itoa(id)})
+			continue // 跳过当前歌曲，继续处理下一个
 		}
 
+		// 获取专辑信息
+		album, _, _, err := uc.ABService.GetAlbumByID(song.Album_id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "GetAlbumByID failed for album ID: " + strconv.Itoa(song.Album_id)})
+			continue // 跳过当前歌曲，继续处理下一个
+		}
+
+		// 获取歌曲的艺术家列表
+		artistIDs, err := uc.ASService.GetArtistListBySongID(song.Song_id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "GetArtistListBySongID failed for song ID: " + strconv.Itoa(song.Song_id)})
+			continue // 跳过当前歌曲，继续处理下一个
+		}
+
+		// 初始化用户喜欢的歌曲对象
 		uLikeSong := &models.NewUserLikeSong{
 			Song:         *song,
 			Album_name:   album.Name,
@@ -800,19 +812,18 @@ func (uc *UserController) GetUserLikeSong(c *gin.Context) {
 			Artist_names: make([]string, 0), // 初始化切片
 		}
 
+		// 遍历艺术家 ID 列表，获取艺术家信息
 		for _, artistID := range artistIDs {
 			artist, err := uc.Aservice.GetArtist(artistID)
 			if err != nil {
 				// 记录错误信息，但不中断流程
 				c.JSON(http.StatusInternalServerError, gin.H{
-					"error":   err,
-					"message": "GetArtist failed",
-					"id":      artistID,
-					"artist":  artist,
-					"list":    uLikeSong,
+					"error":   err.Error(),
+					"message": "GetArtist failed for artist ID: " + strconv.Itoa(artistID),
 				})
-				continue // 跳过当前歌手，继续处理下一个
+				continue // 跳过当前艺术家，继续处理下一个
 			}
+
 			// 确保 artist 不为 nil 后再访问其字段
 			if artist != nil {
 				uLikeSong.Artist_ids = append(uLikeSong.Artist_ids, artistID)
@@ -820,15 +831,19 @@ func (uc *UserController) GetUserLikeSong(c *gin.Context) {
 			}
 		}
 
+		// 将当前歌曲添加到歌曲列表
 		songList = append(songList, uLikeSong)
 	}
 
+	// 分页逻辑
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	page_size, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 
-	// 合并列表并分页
-	startIndex := (page - 1) * page_size
-	endIndex := startIndex + page_size
+	// 计算分页的起始和结束索引
+	startIndex := (page - 1) * pageSize
+	endIndex := startIndex + pageSize
+
+	// 检查是否超出数据范围
 	if startIndex >= len(songList) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有数据范围", "songList": []interface{}{}})
 		return
@@ -836,8 +851,15 @@ func (uc *UserController) GetUserLikeSong(c *gin.Context) {
 	if endIndex > len(songList) {
 		endIndex = len(songList)
 	}
+
+	// 获取分页后的歌曲列表
 	pagedSongList := songList[startIndex:endIndex]
-	c.JSON(http.StatusOK, gin.H{"message": "成功获取用户喜欢的歌曲列表", "songList": pagedSongList})
+
+	// 返回结果
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "成功获取用户喜欢的歌曲列表",
+		"songList": pagedSongList,
+	})
 }
 
 // 用户创建歌单
