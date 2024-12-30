@@ -1,3 +1,4 @@
+ALTER USER `root`@`localhost` IDENTIFIED BY 'Hxy1234]';
 /*
  Navicat Premium Dump SQL
 
@@ -372,7 +373,7 @@ CREATE TABLE `song_info`  (
   `lyrics` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  `song_hit` int NULL DEFAULT NULL,
+  `song_hit` int NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
