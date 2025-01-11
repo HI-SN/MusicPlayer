@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
+	"strings"
 
 	"path/filepath"
 
@@ -26,39 +28,38 @@ func NewSongController(songService *services.SongService) *SongController {
 
 // getAudioDuration 获取音频文件的时长（秒）需要下载ffmpeg
 func getAudioDuration(filePath string) (int, error) {
-	// // 使用 ffmpeg 获取音频文件时长
-	// cmd := fmt.Sprintf("ffmpeg -i %s 2>&1 | grep 'Duration' | cut -d ' ' -f 4 | sed s/,//", filePath)
-	// command := exec.Command("/bin/bash", "-c", cmd)
-	// res, err := command.CombinedOutput()
-	// if err != nil {
-	// 	return 0, fmt.Errorf("failed to execute command: %v, output: %s", err, string(res))
-	// }
+	// 使用 ffmpeg 获取音频文件时长
+	cmd := fmt.Sprintf("ffmpeg -i %s 2>&1 | grep 'Duration' | cut -d ' ' -f 4 | sed s/,//", filePath)
+	command := exec.Command("/bin/bash", "-c", cmd)
+	res, err := command.CombinedOutput()
+	if err != nil {
+		return 0, fmt.Errorf("failed to execute command: %v, output: %s", err, string(res))
+	}
 
-	// body := string(res)
-	// if !strings.Contains(body, ":") {
-	// 	return 0, fmt.Errorf("invalid duration format in output: %s", body)
-	// }
+	body := string(res)
+	if !strings.Contains(body, ":") {
+		return 0, fmt.Errorf("invalid duration format in output: %s", body)
+	}
 
-	// timeArr := strings.Split(body, ":")
-	// if len(timeArr) != 3 {
-	// 	return 0, fmt.Errorf("invalid duration format in output: %s", body)
-	// }
+	timeArr := strings.Split(body, ":")
+	if len(timeArr) != 3 {
+		return 0, fmt.Errorf("invalid duration format in output: %s", body)
+	}
 
-	// hour, err := strconv.ParseFloat(timeArr[0], 64)
-	// if err != nil {
-	// 	return 0, fmt.Errorf("failed to parse hours: %v", err)
-	// }
-	// min, err := strconv.ParseFloat(timeArr[1], 64)
-	// if err != nil {
-	// 	return 0, fmt.Errorf("failed to parse minutes: %v", err)
-	// }
-	// second, err := strconv.ParseFloat(timeArr[2], 64)
-	// if err != nil {
-	// 	return 0, fmt.Errorf("failed to parse seconds: %v", err)
-	// }
+	hour, err := strconv.ParseFloat(timeArr[0], 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse hours: %v", err)
+	}
+	min, err := strconv.ParseFloat(timeArr[1], 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse minutes: %v", err)
+	}
+	second, err := strconv.ParseFloat(timeArr[2], 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse seconds: %v", err)
+	}
 
-	// duration := int(3600*hour + 60*min + second)
-	duration := 300
+	duration := int(3600*hour + 60*min + second)
 	return duration, nil
 }
 
@@ -399,4 +400,103 @@ func (c *SongController) GetCommentsBySongID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"comments": comments})
+}
+
+// GetSongsBySearch 获取搜索结果的歌曲信息
+func (c *SongController) GetSongsBySearch(ctx *gin.Context) {
+	searchKeyword := ctx.Param("search")
+
+	// 从上下文中获取用户 ID
+	userID := ctx.GetString("user_id")
+	var isLoggedIn bool
+	if userID == "" {
+		isLoggedIn = false // 用户未登录
+	} else {
+		isLoggedIn = true // 用户已登录
+	}
+
+	// 调用服务层获取搜索结果
+	songs, err := c.SongService.GetSongsBySearch(searchKeyword)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 如果没有找到歌曲，返回空列表
+	if len(songs) == 0 {
+		ctx.JSON(http.StatusOK, gin.H{
+			"code": 49,
+			"data": []interface{}{},
+		})
+		return
+	}
+
+	// 构造返回的 JSON 结构
+	var response struct {
+		Code int        `json:"code"`
+		Data []SongInfo `json:"data"`
+	}
+
+	response.Code = 49
+	response.Data = make([]SongInfo, 0)
+
+	for _, song := range songs {
+		// 获取歌手名称
+		artistName, err := c.SongService.GetArtistNameBySongID(song.Song_id)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// 获取专辑名称
+		albumName, err := c.SongService.GetAlbumNameByID(song.Album_id)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// 检查用户是否喜欢该歌曲
+		var isLiked bool
+		if isLoggedIn {
+			// 用户已登录，查询是否喜欢该歌曲
+			isLiked, err = c.SongService.IsSongLikedByUser(song.Song_id, userID)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		} else {
+			// 用户未登录，默认设置为 false
+			isLiked = false
+		}
+
+		// 构造歌曲信息
+		songInfo := SongInfo{
+			ID:     strconv.Itoa(song.Song_id),
+			Title:  song.Title,
+			Singer: artistName,
+			Album:  albumName,
+			IfLike: strconv.FormatBool(isLiked),
+			Time:   formatDuration(song.Duration),
+		}
+		response.Data = append(response.Data, songInfo)
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}
+
+// SongInfo 用于返回歌曲信息的结构体
+type SongInfo struct {
+	ID     string `json:"id"`
+	Title  string `json:"title"`
+	Singer string `json:"singer"`
+	Album  string `json:"album"`
+	IfLike string `json:"if_like"`
+	Time   string `json:"time"`
+}
+
+// formatDuration 将秒数转换为 "mm:ss" 格式
+func formatDuration(duration int) string {
+	minutes := duration / 60
+	seconds := duration % 60
+	return fmt.Sprintf("%02d:%02d", minutes, seconds)
 }

@@ -285,4 +285,97 @@ func (s *SongService) GetCommentsBySongID(songID int) ([]models.Comment, error) 
 	}
 
 	return comments, nil
+
+}
+
+// GetSongsBySearch 根据搜索关键词获取歌曲信息
+func (s *SongService) GetSongsBySearch(keyword string) ([]models.Song, error) {
+	// 查询歌曲信息
+	query := `
+		SELECT id, title, duration, album_id, genre, release_date, song_url, lyrics, created_at, updated_at, song_hit
+		FROM song_info
+		WHERE title LIKE ?
+	`
+	rows, err := database.DB.Query(query, "%"+keyword+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var songs []models.Song
+	for rows.Next() {
+		var song models.Song
+		if err := rows.Scan(
+			&song.Song_id, &song.Title, &song.Duration, &song.Album_id, &song.Genre, &song.Release_date,
+			&song.Song_url, &song.Lyrics, &song.Created_at, &song.Updated_at, &song.Song_hit,
+		); err != nil {
+			return nil, err
+		}
+		songs = append(songs, song)
+	}
+
+	// 如果没有找到歌曲，返回空列表，而不是错误
+	if len(songs) == 0 {
+		return []models.Song{}, nil
+	}
+
+	return songs, nil
+}
+
+// GetArtistNameBySongID 根据歌曲ID获取歌手名称
+func (s *SongService) GetArtistNameBySongID(songID int) (string, error) {
+	var artistName string
+	query := `
+		SELECT ai.name
+		FROM artist_info ai
+		JOIN artist_song_relation asr ON ai.id = asr.artist_id
+		WHERE asr.song_id = ?
+	`
+	err := database.DB.QueryRow(query, songID).Scan(&artistName)
+	if err != nil {
+		// 如果没有找到歌手，返回空字符串
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+		return "", err
+	}
+	return artistName, nil
+}
+
+// GetAlbumNameByID 根据专辑ID获取专辑名称
+func (s *SongService) GetAlbumNameByID(albumID int) (string, error) {
+	var albumName string
+	query := `
+		SELECT name
+		FROM album_info
+		WHERE id = ?
+	`
+	err := database.DB.QueryRow(query, albumID).Scan(&albumName)
+	if err != nil {
+		// 如果没有找到专辑，返回空字符串
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+		return "", err
+	}
+	return albumName, nil
+}
+
+// IsSongLikedByUser 检查用户是否喜欢该歌曲
+func (s *SongService) IsSongLikedByUser(songID int, userID string) (bool, error) {
+	var count int
+	query := `
+		SELECT COUNT(*)
+		FROM user_like_song
+		WHERE user_id = ? AND song_id = ?
+	`
+	err := database.DB.QueryRow(query, userID, songID).Scan(&count)
+	if err != nil {
+		// 如果没有找到记录，默认返回 false
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+	return count > 0, nil
 }

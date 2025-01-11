@@ -350,3 +350,24 @@ func (p *PlaylistService) GetPlaylistsByType(playlistType string, limit int) ([]
 
 	return playlists, nil
 }
+
+// GetPlaylistsBySearch 根据搜索关键词获取歌单信息
+func (p *PlaylistService) GetPlaylistsBySearch(keyword string) ([]models.Playlist, error) {
+	query := `SELECT * FROM playlist_info WHERE title LIKE ?`
+	rows, err := database.DB.Query(query, "%"+keyword+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var playlists []models.Playlist
+	for rows.Next() {
+		var playlist models.Playlist
+		if err := rows.Scan(&playlist.Playlist_id, &playlist.Title, &playlist.User_id, &playlist.Create_at, &playlist.Description, &playlist.Type, &playlist.Hits, &playlist.Cover_url); err != nil {
+			return nil, err
+		}
+		playlists = append(playlists, playlist)
+	}
+
+	return playlists, nil
+}

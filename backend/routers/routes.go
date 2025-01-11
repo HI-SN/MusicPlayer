@@ -139,6 +139,7 @@ func SetupRoutes(r *gin.Engine) {
 		songGroup.DELETE("/delete/:song_id", songController.DeleteSongByID)
 		songGroup.GET("/:song_id/comments", songController.GetCommentsBySongID)
 	}
+	r.GET("/res/songs/:search", songController.GetSongsBySearch)
 
 	// 专辑相关路由
 	albumGroup := r.Group("/albums")
@@ -156,6 +157,7 @@ func SetupRoutes(r *gin.Engine) {
 		artistGroup.POST("/add-to-song", artistController.AddArtistToSong)
 		artistGroup.GET("/:artist_id/songs", artistController.GetSongsByArtistID)
 	}
+	r.GET("/res/singer/:keyword", artistController.GetArtistsBySearch)
 	// 播放器相关路由
 	playerGroup := r.Group("/player")
 	{
@@ -179,4 +181,5 @@ func SetupRoutes(r *gin.Engine) {
 		playlistGroup.POST("/:playlist_id/updatecover", playlistController.UploadPlaylistCover)
 		playlistGroup.GET("/recommend", playlistController.GetPlaylistsByType)
 	}
+	r.GET("/res/playlist/:keyword", playlistController.GetPlaylistsBySearch)
 }

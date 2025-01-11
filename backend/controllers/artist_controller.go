@@ -12,6 +12,7 @@ import (
 // ArtistController 封装艺术家相关的控制器
 type ArtistController struct {
 	ArtistSongService *services.ArtistSongService
+	ArtistService     *services.ArtistService
 }
 
 // NewArtistController 创建一个新的 ArtistController
@@ -72,4 +73,39 @@ func (ctrl *ArtistController) GetArtistsBySongID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"artist_ids": artistIDs})
+}
+
+// GetArtistsBySearch 获取搜索结果相关的歌手
+func (c *ArtistController) GetArtistsBySearch(ctx *gin.Context) {
+	searchKeyword := ctx.Param("keyword")
+
+	// 调用服务层获取搜索结果
+	artists, err := c.ArtistService.GetArtistsBySearch(searchKeyword)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 构造返回的JSON结构
+	var response struct {
+		Singers []SingerInfo `json:"singers"`
+	}
+
+	response.Singers = make([]SingerInfo, 0)
+
+	for _, artist := range artists {
+		singerInfo := SingerInfo{
+			SingerID: strconv.Itoa(artist.Artist_id),
+			Name:     artist.Name,
+		}
+		response.Singers = append(response.Singers, singerInfo)
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}
+
+// SingerInfo 用于返回歌手信息的结构体
+type SingerInfo struct {
+	SingerID string `json:"singer_id"`
+	Name     string `json:"name"`
 }

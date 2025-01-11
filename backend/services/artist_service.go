@@ -43,3 +43,24 @@ func (a *ArtistService) DeleteArtist(artistID int) error {
 	_, err := database.DB.Exec(query, artistID)
 	return err
 }
+
+// GetArtistsBySearch 根据搜索关键词获取歌手信息
+func (a *ArtistService) GetArtistsBySearch(keyword string) ([]models.Artist, error) {
+	query := `SELECT * FROM artist_info WHERE name LIKE ?`
+	rows, err := database.DB.Query(query, "%"+keyword+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var artists []models.Artist
+	for rows.Next() {
+		var artist models.Artist
+		if err := rows.Scan(&artist.Artist_id, &artist.Name, &artist.Bio, &artist.Profile_pic, &artist.Type, &artist.Nation); err != nil {
+			return nil, err
+		}
+		artists = append(artists, artist)
+	}
+
+	return artists, nil
+}

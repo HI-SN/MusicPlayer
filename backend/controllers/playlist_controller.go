@@ -285,3 +285,40 @@ func (pc *PlaylistController) GetPlaylistsByType(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Playlists retrieved", "playlists": playlists})
 }
+
+// GetPlaylistsBySearch 获取搜索结果相关的歌单
+func (c *PlaylistController) GetPlaylistsBySearch(ctx *gin.Context) {
+	searchKeyword := ctx.Param("keyword")
+
+	// 调用服务层获取搜索结果
+	playlists, err := c.Service.GetPlaylistsBySearch(searchKeyword)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 构造返回的JSON结构
+	var response struct {
+		Lists []PlaylistInfo `json:"lists"`
+	}
+
+	response.Lists = make([]PlaylistInfo, 0)
+
+	for _, playlist := range playlists {
+		playlistInfo := PlaylistInfo{
+			ListID: strconv.Itoa(playlist.Playlist_id),
+			Title:  playlist.Title,
+			Sum:    playlist.Hits,
+		}
+		response.Lists = append(response.Lists, playlistInfo)
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}
+
+// PlaylistInfo 用于返回歌单信息的结构体
+type PlaylistInfo struct {
+	ListID string `json:"list_id"`
+	Title  string `json:"title"`
+	Sum    int    `json:"sum"`
+}
