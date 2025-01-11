@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -26,12 +27,41 @@ func NewSongController(songService *services.SongService) *SongController {
 	}
 }
 
-// getAudioDuration 获取音频文件的时长（秒）需要下载ffmpeg
+// getFFmpegPath 获取项目内的 FFmpeg 二进制文件路径
+func getFFmpegPath() string {
+	// 获取当前执行文件的目录
+	exePath, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		fmt.Printf("Failed to get executable path: %v\n", err)
+		return ""
+	}
+	exeDir := filepath.Dir(exePath)
+
+	// 构建 FFmpeg 二进制文件的路径
+	ffmpegPath := filepath.Join(exeDir, "backend", "ffmpeg", "bin", "ffmpeg")
+	if runtime.GOOS == "windows" {
+		ffmpegPath += ".exe"
+	}
+	return ffmpegPath
+}
+
+// getAudioDuration 获取音频文件的时长（秒）
 func getAudioDuration(filePath string) (int, error) {
-	// 使用 ffmpeg 获取音频文件时长
-	cmd := fmt.Sprintf("ffmpeg -i %s 2>&1 | grep 'Duration' | cut -d ' ' -f 4 | sed s/,//", filePath)
-	command := exec.Command("/bin/bash", "-c", cmd)
-	res, err := command.CombinedOutput()
+	// 获取项目内的 FFmpeg 二进制文件路径
+	ffmpegPath := getFFmpegPath()
+
+	// 构建 ffmpeg 命令
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		// Windows 系统
+		cmd = exec.Command("cmd.exe", "/C", fmt.Sprintf("%s -i \"%s\" 2>&1 | findstr \"Duration\"", ffmpegPath, filePath))
+	} else {
+		// Unix-like 系统
+		cmd = exec.Command("bash", "-c", fmt.Sprintf("%s -i \"%s\" 2>&1 | grep 'Duration' | cut -d ' ' -f 4 | sed s/,//", ffmpegPath, filePath))
+	}
+
+	// 执行命令
+	res, err := cmd.CombinedOutput()
 	if err != nil {
 		return 0, fmt.Errorf("failed to execute command: %v, output: %s", err, string(res))
 	}
@@ -41,7 +71,8 @@ func getAudioDuration(filePath string) (int, error) {
 		return 0, fmt.Errorf("invalid duration format in output: %s", body)
 	}
 
-	timeArr := strings.Split(body, ":")
+	// 提取时长信息
+	timeArr := strings.Split(strings.TrimSpace(body), ":")
 	if len(timeArr) != 3 {
 		return 0, fmt.Errorf("invalid duration format in output: %s", body)
 	}
@@ -54,7 +85,7 @@ func getAudioDuration(filePath string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse minutes: %v", err)
 	}
-	second, err := strconv.ParseFloat(timeArr[2], 64)
+	second, err := strconv.ParseFloat(strings.Split(timeArr[2], ".")[0], 64)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse seconds: %v", err)
 	}
