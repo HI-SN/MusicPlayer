@@ -11,7 +11,7 @@ type PlayerService struct{}
 
 // PlaySong 播放歌曲
 func (p *PlayerService) PlaySong(songID int) (string, error) {
-	song, _, err := (&SongService{}).GetSongByID(songID)
+	song, _, _, _, err := (&SongService{}).GetSongByID(songID, "", false)
 	if err != nil {
 		return "", err
 	}

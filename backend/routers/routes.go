@@ -179,7 +179,7 @@ func SetupRoutes(r *gin.Engine) {
 		playlistGroup.DELETE("/:playlist_id/remove/:song_id", playlistController.RemoveSongFromPlaylist)
 		playlistGroup.GET("/:playlist_id/songs", playlistController.GetSongsByPlaylistID)
 		playlistGroup.POST("/:playlist_id/updatecover", playlistController.UploadPlaylistCover)
-		playlistGroup.GET("/recommend", playlistController.GetPlaylistsByType)
+		playlistGroup.GET("/recommend/:type", playlistController.GetPlaylistsByType)
 	}
 	r.GET("/res/playlist/:keyword", playlistController.GetPlaylistsBySearch)
 }

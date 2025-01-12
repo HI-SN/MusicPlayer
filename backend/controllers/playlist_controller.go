@@ -166,14 +166,23 @@ func (pc *PlaylistController) GetSongsByPlaylistID(c *gin.Context) {
 		return
 	}
 
+	// 从上下文中获取用户 ID，判断用户是否登录
+	userID := c.GetString("user_id")
+	isLoggedIn := userID != ""
+
 	// 调用服务层函数
-	songIDs, err := pc.Service.GetSongsByPlaylistID(playlistID)
+	songs, err := pc.Service.GetSongsByPlaylistID(playlistID, userID, isLoggedIn)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Songs retrieved", "song_ids": songIDs})
+	// 构造返回的 JSON 结构
+	response := gin.H{
+		"data": songs,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // UploadPlaylistCover 处理上传歌单封面请求
@@ -259,31 +268,28 @@ func (pc *PlaylistController) UploadPlaylistCover(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Cover uploaded successfully", "cover_url": fileURL})
 }
 
-// GetPlaylistsByType 处理获取推荐歌单请求
+// GetPlaylistsByType 处理根据歌单类型获取歌单列表的请求
 func (pc *PlaylistController) GetPlaylistsByType(c *gin.Context) {
-	// 获取类型参数
-	playlistType := c.Query("type")
+	// 获取 URL 中的 type 参数
+	playlistType := c.Param("type")
 	if playlistType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Type parameter is required"})
-		return
-	}
-
-	// 获取限制参数（可选，默认 10）
-	limitStr := c.DefaultQuery("limit", "10") // 如果 limit 未提供，默认值为 "10"
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "type parameter is required"})
 		return
 	}
 
 	// 调用服务层函数
-	playlists, err := pc.Service.GetPlaylistsByType(playlistType, limit)
+	playlists, err := pc.Service.GetPlaylistsByType(playlistType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Playlists retrieved", "playlists": playlists})
+	// 构造返回的 JSON 结构
+	response := gin.H{
+		"data": playlists,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // GetPlaylistsBySearch 获取搜索结果相关的歌单

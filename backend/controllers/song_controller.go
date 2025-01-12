@@ -200,15 +200,32 @@ func (c *SongController) GetSongByID(ctx *gin.Context) {
 		return
 	}
 
-	song, artistName, err := c.SongService.GetSongByID(songID)
+	// 获取当前用户的 ID
+	userID := ctx.GetString("user_id") // 假设用户 ID 存储在上下文中
+	isLoggedIn := userID != ""
+
+	// 调用服务层函数
+	song, artistName, albumName, liked, err := c.SongService.GetSongByID(songID, userID, isLoggedIn)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
+	// 构造返回的 JSON 结构
 	ctx.JSON(http.StatusOK, gin.H{
-		"song":        song,
-		"artist_name": artistName,
+		"id":           song.Song_id,
+		"title":        song.Title,
+		"artist_name":  artistName,
+		"duration":     song.Duration,
+		"album_name":   albumName,
+		"genre":        song.Genre,
+		"release_date": song.Release_date,
+		"song_url":     song.Song_url,
+		"lyrics":       song.Lyrics,
+		"created_at":   song.Created_at,
+		"updated_at":   song.Updated_at,
+		"song_hit":     song.Song_hit,
+		"liked":        liked, // 添加 liked 字段
 	})
 }
 

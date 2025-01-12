@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -45,12 +46,12 @@ func (s *SongService) CreateSong(title string, artistID int, duration int, album
 	return songID, nil
 }
 
-// GetSongByID retrieves a song by its ID along with artist name
-func (s *SongService) GetSongByID(songID int) (*models.Song, string, error) {
+// GetSongByID retrieves a song by its ID along with artist name, album name, and liked status
+func (s *SongService) GetSongByID(songID int, userID string, isLoggedIn bool) (*models.Song, string, string, string, error) {
 	db := database.DB
 
 	var song models.Song
-	var artistName string
+	var artistName, albumName string
 
 	// 查询歌曲信息
 	query := `
@@ -64,9 +65,9 @@ func (s *SongService) GetSongByID(songID int) (*models.Song, string, error) {
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, "", errors.New("song not found")
+			return nil, "", "", "", errors.New("song not found")
 		}
-		return nil, "", err
+		return nil, "", "", "", err
 	}
 
 	// 查询艺术家与歌曲的关系
@@ -78,7 +79,7 @@ func (s *SongService) GetSongByID(songID int) (*models.Song, string, error) {
 	`
 	err = db.QueryRow(relationQuery, songID).Scan(&artistID)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", "", err
 	}
 
 	// 查询艺术家信息
@@ -89,10 +90,43 @@ func (s *SongService) GetSongByID(songID int) (*models.Song, string, error) {
 	`
 	err = db.QueryRow(artistQuery, artistID).Scan(&artistName)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", "", err
 	}
 
-	return &song, artistName, nil
+	// 查询专辑信息
+	albumQuery := `
+		SELECT name
+		FROM album_info
+		WHERE id = ?
+	`
+	err = db.QueryRow(albumQuery, song.Album_id).Scan(&albumName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			albumName = "" // 如果没有专辑信息，设置为空字符串
+		} else {
+			return nil, "", "", "", err
+		}
+	}
+
+	// 检查用户是否喜欢该歌曲
+	var liked string
+	if isLoggedIn {
+		var count int
+		likeQuery := `
+			SELECT COUNT(*)
+			FROM user_like_song
+			WHERE user_id = ? AND song_id = ?
+		`
+		err := db.QueryRow(likeQuery, userID, songID).Scan(&count)
+		if err != nil {
+			return nil, "", "", "", err
+		}
+		liked = strconv.FormatBool(count > 0)
+	} else {
+		liked = "false" // 用户未登录，默认设置为 false
+	}
+
+	return &song, artistName, albumName, liked, nil
 }
 
 func (s *SongService) UpdateSongInfo(songID int, title string, duration int, albumID int, genre string, releaseDate time.Time, songURL string, lyrics string) error {

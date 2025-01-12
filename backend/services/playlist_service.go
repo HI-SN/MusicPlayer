@@ -3,8 +3,13 @@ package services
 import (
 	"backend/database"
 	"backend/models"
+	"database/sql"
+	"errors"
 	"fmt"
+	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // PlaylistService 定义播放列表相关的服务函数
@@ -243,7 +248,7 @@ func (p *PlaylistService) RemoveSongFromPlaylist(playlistID, songID int) error {
 }
 
 // GetSongsByPlaylistID 获取播放列表中的所有歌曲
-func (p *PlaylistService) GetSongsByPlaylistID(playlistID int) ([]int, error) {
+func (p *PlaylistService) GetSongsByPlaylistID(playlistID int, userID string, isLoggedIn bool) ([]gin.H, error) {
 	// 检查播放列表是否存在
 	exists, err := p.CheckPlaylistExists(playlistID)
 	if err != nil {
@@ -253,25 +258,118 @@ func (p *PlaylistService) GetSongsByPlaylistID(playlistID int) ([]int, error) {
 		return nil, fmt.Errorf("playlist with ID %d does not exist", playlistID)
 	}
 
-	var songIDs []int
-
-	// 使用 ? 作为占位符
-	query := "SELECT song_id FROM song_playlist_relation WHERE playlist_id=?"
+	// 查询播放列表中的歌曲 ID
+	query := `
+		SELECT song_id
+		FROM song_playlist_relation
+		WHERE playlist_id = ?
+	`
 	rows, err := database.DB.Query(query, playlistID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
+	var songs []gin.H
+
 	for rows.Next() {
 		var songID int
 		if err := rows.Scan(&songID); err != nil {
 			return nil, err
 		}
-		songIDs = append(songIDs, songID)
+
+		// 获取歌曲详细信息（复现 GetSongsBySearch 逻辑）
+		var song struct {
+			ID          int
+			Title       string
+			Duration    int
+			AlbumID     int
+			Genre       string
+			ReleaseDate string
+			SongURL     string
+			Lyrics      string
+			CreatedAt   time.Time
+			UpdatedAt   time.Time
+			SongHit     int
+		}
+		songQuery := `
+			SELECT id, title, duration, album_id, genre, release_date, song_url, lyrics, created_at, updated_at, song_hit
+			FROM song_info
+			WHERE id = ?
+		`
+		err := database.DB.QueryRow(songQuery, songID).Scan(
+			&song.ID, &song.Title, &song.Duration, &song.AlbumID, &song.Genre, &song.ReleaseDate,
+			&song.SongURL, &song.Lyrics, &song.CreatedAt, &song.UpdatedAt, &song.SongHit,
+		)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				continue // 如果没有找到歌曲，跳过
+			}
+			return nil, err
+		}
+
+		// 获取歌手名称（复现 GetArtistNameBySongID 逻辑）
+		var artistName string
+		artistQuery := `
+			SELECT ai.name
+			FROM artist_info ai
+			JOIN artist_song_relation asr ON ai.id = asr.artist_id
+			WHERE asr.song_id = ?
+		`
+		err = database.DB.QueryRow(artistQuery, songID).Scan(&artistName)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+
+		// 获取专辑名称（复现 GetAlbumNameByID 逻辑）
+		var albumName string
+		albumQuery := `
+			SELECT name
+			FROM album_info
+			WHERE id = ?
+		`
+		err = database.DB.QueryRow(albumQuery, song.AlbumID).Scan(&albumName)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+
+		// 检查用户是否喜欢该歌曲（复现 IsSongLikedByUser 逻辑）
+		var isLiked bool
+		if isLoggedIn {
+			var count int
+			likeQuery := `
+				SELECT COUNT(*)
+				FROM user_like_song
+				WHERE user_id = ? AND song_id = ?
+			`
+			err := database.DB.QueryRow(likeQuery, userID, songID).Scan(&count)
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return nil, err
+			}
+			isLiked = count > 0
+		} else {
+			isLiked = false
+		}
+
+		// 格式化时长
+		minutes := song.Duration / 60
+		seconds := song.Duration % 60
+		formattedDuration := fmt.Sprintf("%02d:%02d", minutes, seconds)
+
+		// 构造歌曲信息
+		songInfo := gin.H{
+			"id":       strconv.Itoa(song.ID),
+			"title":    song.Title,
+			"singer":   artistName,
+			"album":    albumName,
+			"duration": formattedDuration,
+			"liked":    strconv.FormatBool(isLiked), // 动态设置 liked 字段
+		}
+
+		songs = append(songs, songInfo)
 	}
 
-	return songIDs, nil
+	return songs, nil
 }
 
 // GetPlaylistByUserID 根据用户ID获取用户创建的歌单列表
@@ -322,29 +420,50 @@ func (p *PlaylistService) UpdatePlaylistCover(playlistID int, coverURL string) e
 	return err
 }
 
-// GetPlaylistsByType 根据类型获取推荐歌单（支持模糊匹配）
-func (p *PlaylistService) GetPlaylistsByType(playlistType string, limit int) ([]models.Playlist, error) {
-	var playlists []models.Playlist
+// GetPlaylistsByType 根据歌单类型获取歌单列表
+func (p *PlaylistService) GetPlaylistsByType(playlistType string) ([]gin.H, error) {
+	var query string
+	var args []interface{}
 
-	// 如果 limit 未提供或无效，使用默认值 10
-	if limit <= 0 {
-		limit = 10
+	// 如果 type 为 "推荐"，查询所有歌单
+	if playlistType == "推荐" {
+		query = `
+			SELECT id, title
+			FROM playlist_info
+		`
+	} else {
+		// 否则，查询符合指定类型的歌单
+		query = `
+			SELECT id, title
+			FROM playlist_info
+			WHERE type = ?
+		`
+		args = append(args, playlistType)
 	}
 
-	// 使用 LIKE 进行模糊查询
-	query := "SELECT id, title, user_id, created_at, description, type, hits, cover_url FROM playlist_info WHERE type LIKE ? ORDER BY hits DESC LIMIT ?"
-	rows, err := database.DB.Query(query, "%"+playlistType+"%", limit)
+	// 执行查询
+	rows, err := database.DB.Query(query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query playlists: %v", err)
+		return nil, err
 	}
 	defer rows.Close()
 
+	var playlists []gin.H
+
 	for rows.Next() {
-		var playlist models.Playlist
-		err := rows.Scan(&playlist.Playlist_id, &playlist.Title, &playlist.User_id, &playlist.Create_at, &playlist.Description, &playlist.Type, &playlist.Hits, &playlist.Cover_url)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan playlist: %v", err)
+		var id int
+		var title string
+
+		if err := rows.Scan(&id, &title); err != nil {
+			return nil, err
 		}
+
+		// 构造歌单信息
+		playlist := gin.H{
+			"id":    strconv.Itoa(id),
+			"title": title,
+		}
+
 		playlists = append(playlists, playlist)
 	}
 

@@ -784,7 +784,7 @@ func (uc *UserController) GetUserLikeSong(c *gin.Context) {
 	// 遍历歌曲 ID 列表，获取歌曲信息、歌手信息和专辑信息
 	for _, id := range songIDs {
 		// 根据歌曲 ID 获取歌曲信息和歌手名称
-		song, _, err := uc.SongService.GetSongByID(id)
+		song, _, _, _, err := uc.SongService.GetSongByID(id, userID, true)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "GetSongByID failed for song ID: " + strconv.Itoa(id)})
 			continue // 跳过当前歌曲，继续处理下一个
