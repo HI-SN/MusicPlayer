@@ -268,6 +268,26 @@ func (pc *PlaylistController) UploadPlaylistCover(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Cover uploaded successfully", "cover_url": fileURL})
 }
 
+// GetSongIDsByPlaylistID 处理获取歌单下的所有歌曲ID请求
+func (pc *PlaylistController) GetSongIDsByPlaylistID(c *gin.Context) {
+	// 获取 URL 中的 playlist_id
+	playlistID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid playlist ID"})
+		return
+	}
+
+	// 调用服务层函数
+	songIDs, err := pc.Service.GetSongIDsByPlaylistID(playlistID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 返回歌曲ID列表
+	c.JSON(http.StatusOK, songIDs)
+}
+
 // GetPlaylistsByType 处理根据歌单类型获取歌单列表的请求
 func (pc *PlaylistController) GetPlaylistsByType(c *gin.Context) {
 	// 获取 URL 中的 type 参数

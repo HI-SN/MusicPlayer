@@ -420,6 +420,47 @@ func (p *PlaylistService) UpdatePlaylistCover(playlistID int, coverURL string) e
 	return err
 }
 
+// SongIDResponse 定义返回的歌曲ID结构体
+type SongIDResponse struct {
+	SongID int `json:"song_id"`
+}
+
+// GetSongIDsByPlaylistID 根据歌单ID获取该歌单下的所有歌曲ID
+func (p *PlaylistService) GetSongIDsByPlaylistID(playlistID int) ([]SongIDResponse, error) {
+	// 检查歌单是否存在
+	exists, err := p.CheckPlaylistExists(playlistID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, fmt.Errorf("playlist with ID %d does not exist", playlistID)
+	}
+
+	// 查询歌单下的歌曲ID
+	query := `
+		SELECT song_id
+		FROM song_playlist_relation
+		WHERE playlist_id = ?
+	`
+	rows, err := database.DB.Query(query, playlistID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query song IDs: %v", err)
+	}
+	defer rows.Close()
+
+	var songIDs []SongIDResponse
+
+	for rows.Next() {
+		var songID int
+		if err := rows.Scan(&songID); err != nil {
+			return nil, fmt.Errorf("failed to scan song ID: %v", err)
+		}
+		songIDs = append(songIDs, SongIDResponse{SongID: songID})
+	}
+
+	return songIDs, nil
+}
+
 // GetPlaylistsByType 根据歌单类型获取歌单列表
 func (p *PlaylistService) GetPlaylistsByType(playlistType string) ([]gin.H, error) {
 	var query string

@@ -180,6 +180,7 @@ func SetupRoutes(r *gin.Engine) {
 		playlistGroup.GET("/:playlist_id/songs", playlistController.GetSongsByPlaylistID)
 		playlistGroup.POST("/:playlist_id/updatecover", playlistController.UploadPlaylistCover)
 		playlistGroup.GET("/recommend/:type", playlistController.GetPlaylistsByType)
+		playlistGroup.GET("/allsongs/:id", playlistController.GetSongIDsByPlaylistID)
 	}
 	r.GET("/res/playlist/:keyword", playlistController.GetPlaylistsBySearch)
 }
