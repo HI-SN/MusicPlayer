@@ -538,8 +538,8 @@ type SongInfo struct {
 	Title  string `json:"title"`
 	Singer string `json:"singer"`
 	Album  string `json:"album"`
-	IfLike string `json:"if_like"`
-	Time   string `json:"time"`
+	IfLike string `json:"liked"`
+	Time   string `json:"duration"`
 }
 
 // formatDuration 将秒数转换为 "mm:ss" 格式
