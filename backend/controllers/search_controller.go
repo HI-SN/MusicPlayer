@@ -66,7 +66,7 @@ func Search(c *gin.Context) {
 	defer playlistRows.Close()
 	for playlistRows.Next() {
 		var playlist models.Playlist
-		err := playlistRows.Scan(&playlist.Playlist_id, &playlist.Title, &playlist.User_id, &playlist.Create_at, &playlist.Description, &playlist.Type, &playlist.Hits, &playlist.CoverUrl)
+		err := playlistRows.Scan(&playlist.Playlist_id, &playlist.Title, &playlist.User_id, &playlist.Create_at, &playlist.Description, &playlist.Type, &playlist.Hits, &playlist.Cover_url)
 		if err != nil {
 			log.Printf("扫描歌单数据失败: %v", err)
 			continue

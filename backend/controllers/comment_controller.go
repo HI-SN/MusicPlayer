@@ -1,10 +1,8 @@
 package controllers
 
 import (
-	"backend/database"
 	"backend/models"
 	"backend/services"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -202,41 +200,4 @@ func (cc *CommentController) GetCommentLikeCount(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"count": count, "message": "成功获取点赞数"})
-}
-
-func GetMomentComments(c *gin.Context) {
-	userID := c.Param("user_id")
-	var comments []models.Comment
-	db := database.DB
-
-	// 查询动态评论的SQL语句，根据user_id获取相关评论且只筛选出类型为动态评论的记录
-	query := `
-        SELECT 
-            ci.id, ci.content, ci.created_at, ci.user_id, ci.type, ci.target_id, ui.profile_pic
-        FROM 
-            comment_info ci
-        JOIN 
-            user_info ui ON ci.user_id = ui.user_id
-        WHERE 
-            ci.user_id =? AND ci.type = '动态评论'
-    `
-	rows, err := db.Query(query, userID)
-	if err != nil {
-		log.Printf("查询动态评论失败: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取动态评论失败，请稍后再试"})
-		return
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var comment models.Comment
-		err := rows.Scan(&comment.Comment_id, &comment.Content, &comment.Create_at, &comment.User_id, &comment.Type, &comment.Target_id, &comment.Profile_pic)
-		if err != nil {
-			log.Printf("扫描评论数据失败: %v", err)
-			continue
-		}
-		comments = append(comments, comment)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"moment_comments": comments})
 }
