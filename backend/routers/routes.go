@@ -138,6 +138,7 @@ func SetupRoutes(r *gin.Engine) {
 		songGroup.GET("/:song_id/download/lyrics", songController.DownloadLyricsBySongID)
 		songGroup.DELETE("/delete/:song_id", songController.DeleteSongByID)
 		songGroup.GET("/:song_id/comments", songController.GetCommentsBySongID)
+		songGroup.GET("/:song_id/:playlist_id", controllers.AddSongToPlaylist)
 	}
 	r.GET("/res/songs/:search", songController.GetSongsBySearch)
 
@@ -156,6 +157,7 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		artistGroup.POST("/add-to-song", artistController.AddArtistToSong)
 		artistGroup.GET("/:artist_id/songs", artistController.GetSongsByArtistID)
+		artistGroup.GET("/detail/:id", controllers.GetArtistDetailByID)
 	}
 	r.GET("/res/singer/:keyword", artistController.GetArtistsBySearch)
 	// 播放器相关路由
@@ -183,4 +185,26 @@ func SetupRoutes(r *gin.Engine) {
 		playlistGroup.GET("/allsongs/:id", playlistController.GetSongIDsByPlaylistID)
 	}
 	r.GET("/res/playlist/:keyword", playlistController.GetPlaylistsBySearch)
+
+	// 首页相关路由注册
+	homeGroup := r.Group("/home")
+	{
+		homeGroup.GET("/playlist", controllers.GetHomePlaylists)
+		homeGroup.GET("/ranking/:name", controllers.GetHomeRanking)
+	}
+
+	// 消息中心相关路由注册
+	messageGroup := r.Group("/message")
+	{
+		messageGroup.GET("/records/:sender_id/:receiver_id", controllers.GetCurrentChatMessages)
+		// messageGroup.GET("/comment/:user_id", controllers.GetMomentComments)
+		messageGroup.GET("/private/:user_id", controllers.GetPrivateMessageList)
+	}
+
+	// 排行榜页面相关路由注册
+	rankingGroup := r.Group("/ranking")
+	{
+		rankingGroup.GET("/:name", controllers.GetRankDetailsByName)
+	}
+	r.GET("/search/:id", controllers.Search)
 }
