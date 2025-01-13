@@ -205,8 +205,13 @@ func (cc *CommentController) GetCommentLikeCount(c *gin.Context) {
 }
 
 type UserComment struct {
-	comment     models.Comment
-	profile_pic string
+	Comment_id  int
+	Content     string
+	User_id     string
+	Create_at   time.Time
+	Type        string
+	Target_id   int
+	Profile_pic string // 根据user_id从user_info表中获得
 }
 
 func GetMomentComments(c *gin.Context) {
@@ -222,8 +227,10 @@ func GetMomentComments(c *gin.Context) {
             comment_info ci
         JOIN 
             user_info ui ON ci.user_id = ui.user_id
+		JOIN
+		    moment_info mi ON mi.id = ci.target_id
         WHERE 
-            ci.user_id =? AND ci.type = '动态评论'
+            mi.user_id =? AND ci.type = '动态评论'
     `
 	rows, err := db.Query(query, userID)
 	if err != nil {
@@ -235,7 +242,7 @@ func GetMomentComments(c *gin.Context) {
 
 	for rows.Next() {
 		var usercomment UserComment
-		err := rows.Scan(&usercomment.comment.Comment_id, &usercomment.comment.Content, &usercomment.comment.Created_at, &usercomment.comment.User_id, &usercomment.comment.Type, &usercomment.comment.Target_id, &usercomment.profile_pic)
+		err := rows.Scan(&usercomment.Comment_id, &usercomment.Content, &usercomment.Create_at, &usercomment.User_id, &usercomment.Type, &usercomment.Target_id, &usercomment.Profile_pic)
 		if err != nil {
 			log.Printf("扫描评论数据失败: %v", err)
 			continue
