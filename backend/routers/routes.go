@@ -206,5 +206,5 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		rankingGroup.GET("/:name", controllers.GetRankDetailsByName)
 	}
-	r.GET("/search/:id", controllers.Search)
+	r.GET("/search/:str", controllers.Search)
 }
