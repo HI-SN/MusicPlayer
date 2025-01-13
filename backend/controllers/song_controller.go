@@ -218,6 +218,7 @@ func (c *SongController) GetSongByID(ctx *gin.Context) {
 		"artist_name":  artistName,
 		"duration":     song.Duration,
 		"album_name":   albumName,
+		"album_id":     song.Album_id,
 		"genre":        song.Genre,
 		"release_date": song.Release_date,
 		"song_url":     song.Song_url,
@@ -519,12 +520,13 @@ func (c *SongController) GetSongsBySearch(ctx *gin.Context) {
 
 		// 构造歌曲信息
 		songInfo := SongInfo{
-			ID:     strconv.Itoa(song.Song_id),
-			Title:  song.Title,
-			Singer: artistName,
-			Album:  albumName,
-			IfLike: strconv.FormatBool(isLiked),
-			Time:   formatDuration(song.Duration),
+			ID:       strconv.Itoa(song.Song_id),
+			Title:    song.Title,
+			Singer:   artistName,
+			Album:    albumName,
+			Album_id: song.Album_id,
+			IfLike:   strconv.FormatBool(isLiked),
+			Time:     formatDuration(song.Duration),
 		}
 		response.Data = append(response.Data, songInfo)
 	}
@@ -534,12 +536,13 @@ func (c *SongController) GetSongsBySearch(ctx *gin.Context) {
 
 // SongInfo 用于返回歌曲信息的结构体
 type SongInfo struct {
-	ID     string `json:"id"`
-	Title  string `json:"title"`
-	Singer string `json:"singer"`
-	Album  string `json:"album"`
-	IfLike string `json:"liked"`
-	Time   string `json:"duration"`
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Singer   string `json:"singer"`
+	Album    string `json:"album"`
+	Album_id int    `json:"album_id"`
+	IfLike   string `json:"liked"`
+	Time     string `json:"duration"`
 }
 
 // formatDuration 将秒数转换为 "mm:ss" 格式

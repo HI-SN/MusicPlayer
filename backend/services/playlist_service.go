@@ -362,6 +362,7 @@ func (p *PlaylistService) GetSongsByPlaylistID(playlistID int, userID string, is
 			"title":    song.Title,
 			"singer":   artistName,
 			"album":    albumName,
+			"album_id": strconv.Itoa(song.AlbumID),
 			"duration": formattedDuration,
 			"liked":    strconv.FormatBool(isLiked), // 动态设置 liked 字段
 		}
