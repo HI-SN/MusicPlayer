@@ -37,6 +37,7 @@ func main() {
 
 	routers.SetupRoutes(r)
 
-	//在9090端口启动服务
-	panic(r.Run("127.0.0.1:54212"))
+	//在配置的服务器端口启动服务
+	panic(r.Run("localhost:" + configs.AppConfig.Server.Port))
+	// panic(r.Run("127.0.0.1:54212"))
 }
