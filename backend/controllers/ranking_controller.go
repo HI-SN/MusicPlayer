@@ -67,7 +67,12 @@ func GetHomeRanking(c *gin.Context) {
 func GetRankDetailsByName(c *gin.Context) {
 	rankingName := c.Param("name")
 	// 获取当前用户的 ID
-	userID := c.GetString("user_id") // 假设用户 ID 存储在上下文中
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	userID := user_id.(string)
 	isLoggedIn := userID != ""
 	var songs []models.Song_ranking_detail
 	db := database.DB
@@ -141,10 +146,11 @@ func AddSongToPlaylist(c *gin.Context) {
 	playlistID := c.Param("playlist_id")
 	// 插入歌曲到歌单的 SQL 语句
 	query := "INSERT INTO song_playlist_relation (playlist_id, song_id) VALUES (?,?)"
-	_, err := db.Exec(query, songID, playlistID)
+	_, err := db.Exec(query, playlistID, songID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "将歌曲加入歌单失败！"})
+		c.JSON(http.StatusOK, gin.H{"message": "500"})
+		// c.JSON(http.StatusInternalServerError, gin.H{"error": "将歌曲加入歌单失败！"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "加入歌单成功！"})
+	c.JSON(http.StatusOK, gin.H{"message": "200"})
 }
