@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"backend/database"
+	"backend/models"
 	"backend/services"
 	"fmt"
 	"net/http"
@@ -550,4 +552,48 @@ func formatDuration(duration int) string {
 	minutes := duration / 60
 	seconds := duration % 60
 	return fmt.Sprintf("%02d:%02d", minutes, seconds)
+}
+
+func GetSongsByArtistID(artistID int, userID string, isLoggedIn bool) ([]models.Song_ranking_detail, error) {
+	var songs []models.Song_ranking_detail
+	db := database.DB
+	query := "SELECT id, title, duration, album_id, genre, release_date, song_url, lyrics, created_at, updated_at, song_hit FROM song_info natural join artist_song_relation WHERE artist_id =?"
+	rows, err := db.Query(query, artistID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var song models.Song_ranking_detail
+		err := rows.Scan(&song.ID, &song.Title, &song.Duration, &song.AlbumID, &song.Genre, &song.ReleaseDate, &song.SongUrl, &song.Lyrics, &song.SongHit)
+		if err != nil {
+			return nil, err
+		}
+		// 检查用户是否喜欢该歌曲
+		if isLoggedIn {
+			var count int
+			likeQuery := `
+				SELECT COUNT(*)
+				FROM user_like_song
+				WHERE user_id = ? AND song_id = ?
+			`
+			err := db.QueryRow(likeQuery, userID, song.ID).Scan(&count)
+			if err != nil {
+				// log.Printf("检查用户是否喜欢该歌曲失败: %v", err)
+				continue
+			}
+			if count > 0 {
+				song.Liked = "true"
+			} else {
+				song.Liked = "false"
+			}
+		} else {
+			song.Liked = "false" // 用户未登录，默认设置为 false
+		}
+		songs = append(songs, song)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return songs, nil
 }

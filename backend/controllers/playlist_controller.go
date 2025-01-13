@@ -1,13 +1,18 @@
 package controllers
 
 import (
+	"backend/database"
 	"backend/models"
 	"backend/services"
+	"database/sql"
 	"fmt"
+	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -347,4 +352,47 @@ type PlaylistInfo struct {
 	ListID string `json:"list_id"`
 	Title  string `json:"title"`
 	Sum    int    `json:"sum"`
+}
+
+func randomPlaylists(playlists []models.PlaylistResponse) []models.PlaylistResponse {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	if len(playlists) <= 4 {
+		return playlists
+	}
+	// 随机打乱歌单顺序
+	for i := range playlists {
+		j := r.Intn(len(playlists))
+		playlists[i], playlists[j] = playlists[j], playlists[i]
+	}
+	return playlists[:4]
+}
+func getPlaylistsFromDB(db *sql.DB) []models.PlaylistResponse {
+	var playlists []models.PlaylistResponse
+	query := "SELECT id, title, description, type, hits, cover_url FROM playlist_info"
+	if db == nil {
+		return playlists
+	}
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Println(err)
+		return playlists
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var p models.PlaylistResponse
+		err := rows.Scan(&p.Playlist_id, &p.Title, &p.Description, &p.Type, &p.Hits, &p.CoverUrl)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		playlists = append(playlists, p)
+	}
+	return playlists
+}
+
+func GetHomePlaylists(c *gin.Context) {
+	db := database.DB
+	playlists := getPlaylistsFromDB(db)
+	randomPlaylists := randomPlaylists(playlists)
+	c.JSON(http.StatusOK, gin.H{"playlists": randomPlaylists})
 }

@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"backend/database"
 	"backend/models"
 	"backend/services"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -108,4 +110,40 @@ func (c *ArtistController) GetArtistsBySearch(ctx *gin.Context) {
 type SingerInfo struct {
 	SingerID string `json:"singer_id"`
 	Name     string `json:"name"`
+}
+
+// Artist 歌手信息结构体
+type ArtistDetail struct {
+	Artist models.Artist
+	Songs  []models.Song_ranking_detail `json:"songs"`
+}
+
+// GetArtistByID 从数据库根据 id 获取歌手信息
+func GetArtistDetailByID(c *gin.Context) {
+	id := c.Param("id")
+	// 获取当前用户的 ID
+	userID := c.GetString("user_id") // 假设用户 ID 存储在上下文中
+	isLoggedIn := userID != ""
+	var response ArtistDetail
+	var artist models.Artist
+	db := database.DB
+	// 查询歌手信息
+	query := "SELECT id, name, bio, profile_pic, type, nation FROM artist_info WHERE id =?"
+	err := db.QueryRow(query, id).Scan(&artist.Artist_id, &artist.Name, &artist.Bio, &artist.Profile_pic, &artist.Type, &artist.Nation)
+	if err != nil {
+		log.Printf("查询歌手信息失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取歌手信息失败，请稍后再试"})
+		return
+	}
+	// 获取该歌手的歌曲信息
+	songs, err := GetSongsByArtistID(artist.Artist_id, userID, isLoggedIn)
+	if err != nil {
+		log.Printf("获取歌手的歌曲信息失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取歌手的歌曲信息失败！"})
+		return
+	}
+
+	response.Artist = artist
+	response.Songs = songs
+	c.JSON(http.StatusOK, response)
 }
