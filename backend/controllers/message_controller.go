@@ -12,9 +12,9 @@ import (
 )
 
 type CurrentChatMessages struct {
-	messages     []models.Message
-	sender_pic   string
-	receiver_pic string
+	Messages    []models.Message
+	SenderPic   string
+	ReceiverPic string
 }
 
 func GetCurrentChatMessages(c *gin.Context) {
@@ -50,7 +50,7 @@ func GetCurrentChatMessages(c *gin.Context) {
 			log.Printf("扫描聊天记录数据失败: %v", err)
 			continue
 		}
-		currentchatmessages.messages = append(currentchatmessages.messages, msg)
+		currentchatmessages.Messages = append(currentchatmessages.Messages, msg)
 	}
 
 	// 查询当前登录用户头像的SQL语句
@@ -70,7 +70,7 @@ func GetCurrentChatMessages(c *gin.Context) {
 	}
 	defer rows.Close()
 	if rows.Next() {
-		err := rows.Scan(&currentchatmessages.sender_pic)
+		err := rows.Scan(&currentchatmessages.SenderPic)
 		if err != nil {
 			log.Printf("扫描当前登录用户头像失败: %v", err)
 		}
@@ -93,7 +93,7 @@ func GetCurrentChatMessages(c *gin.Context) {
 	}
 	defer rows.Close()
 	if rows.Next() {
-		err := rows.Scan(&currentchatmessages.receiver_pic)
+		err := rows.Scan(&currentchatmessages.ReceiverPic)
 		if err != nil {
 			log.Printf("扫描对方用户头像失败: %v", err)
 		}
