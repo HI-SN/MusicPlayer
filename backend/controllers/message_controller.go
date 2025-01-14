@@ -198,7 +198,7 @@ func GetPrivateMessageList(c *gin.Context) {
 }
 
 // 发送消息的接口处理函数
-func sendMessage(c *gin.Context) {
+func SendMessage(c *gin.Context) {
 	var req models.SendMessageRequest
 	// 绑定JSON数据到请求结构体，如果绑定失败返回400错误
 	if err := c.BindJSON(&req); err != nil {
@@ -213,7 +213,7 @@ func sendMessage(c *gin.Context) {
 	db := database.DB
 	// 插入消息到数据库的SQL语句，这里假设messages表有相应的字段来存储这些信息
 	query := `
-        INSERT INTO messages (sender_id, receiver_id, content, message_type, is_read)
+        INSERT INTO message_info (sender_id, receiver_id, content, message_type, is_read)
         VALUES (?,?,?,?,0)
     `
 	result, err := db.Exec(query, req.SenderID, req.ReceiverID, req.Content, req.MessageType, req.IsRead)
