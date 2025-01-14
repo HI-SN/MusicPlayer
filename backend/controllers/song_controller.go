@@ -575,7 +575,7 @@ func formatDuration(duration int) string {
 func GetSongsByArtistID(artistID int, userID string, isLoggedIn bool) ([]models.Song_ranking_detail, error) {
 	var songs []models.Song_ranking_detail
 	db := database.DB
-	query := "SELECT id, title, duration, album_id, genre, release_date, song_url, lyrics, song_hit FROM song_info natural join artist_song_relation WHERE artist_id =?"
+	query := "SELECT id, title, duration, album_id, genre, release_date, song_url, lyrics, song_hit FROM song_info si join artist_song_relation asr on si.id = asr.song_id WHERE artist_id =?"
 	rows, err := db.Query(query, artistID)
 	if err != nil {
 		return nil, err
