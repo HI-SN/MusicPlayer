@@ -133,7 +133,7 @@ func SetupRoutes(r *gin.Engine) {
 	songGroup := r.Group("/songs")
 	{
 		songGroup.POST("/create", songController.CreateSong)
-		songGroup.GET("/:song_id", songController.GetSongByID)
+
 		songGroup.PUT("/update/:song_id", songController.UpdateSongInfo)
 		songGroup.POST("/:song_id/upload/lyrics", songController.UploadLyricsBySongID)
 		songGroup.GET("/:song_id/download/audio", songController.DownloadAudioBySongID)
@@ -142,7 +142,13 @@ func SetupRoutes(r *gin.Engine) {
 		songGroup.GET("/:song_id/comments", songController.GetCommentsBySongID)
 		songGroup.GET("/:song_id/:playlist_id", controllers.AddSongToPlaylist)
 	}
-	r.GET("/res/songs/:search", songController.GetSongsBySearch)
+	// 需要身份验证的路由组
+	authRequiredSongGroup := r.Group("")
+	authRequiredSongGroup.Use(middleware.AuthMiddleware())
+	{
+		authRequiredSongGroup.GET("/songs/:song_id", songController.GetSongByID)
+		authRequiredSongGroup.GET("/res/songs/:search", songController.GetSongsBySearch)
+	}
 
 	// 专辑相关路由
 	albumGroup := r.Group("/albums")
@@ -175,18 +181,22 @@ func SetupRoutes(r *gin.Engine) {
 	playlistGroup := r.Group("/playlists")
 	{
 		playlistGroup.POST("/", playlistController.CreatePlaylist)
-		playlistGroup.GET("/:playlist_id", playlistController.GetPlaylist)
 		playlistGroup.PUT("/update/:playlist_id", playlistController.UpdatePlaylist)
 		playlistGroup.DELETE("/:playlist_id", playlistController.DeletePlaylist)
 		playlistGroup.POST("/:playlist_id/add/:song_id", playlistController.AddSongToPlaylist)
 		playlistGroup.DELETE("/:playlist_id/remove/:song_id", playlistController.RemoveSongFromPlaylist)
-		playlistGroup.GET("/:playlist_id/songs", playlistController.GetSongsByPlaylistID)
 		playlistGroup.POST("/:playlist_id/updatecover", playlistController.UploadPlaylistCover)
 		playlistGroup.GET("/recommend/:type", playlistController.GetPlaylistsByType)
 		playlistGroup.GET("/allsongs/:id", playlistController.GetSongIDsByPlaylistID)
 	}
 	r.GET("/res/playlist/:keyword", playlistController.GetPlaylistsBySearch)
-
+	// 需要身份验证的路由组
+	authRequiredPlaylistGroup := r.Group("/playlists")
+	authRequiredPlaylistGroup.Use(middleware.AuthMiddleware())
+	{
+		authRequiredPlaylistGroup.GET("/:playlist_id/songs", playlistController.GetSongsByPlaylistID)
+		authRequiredPlaylistGroup.GET("/:playlist_id", playlistController.GetPlaylist)
+	}
 	// 首页相关路由注册
 	homeGroup := r.Group("/home")
 	{
