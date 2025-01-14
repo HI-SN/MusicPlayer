@@ -159,7 +159,6 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		artistGroup.POST("/add-to-song", artistController.AddArtistToSong)
 		artistGroup.GET("/:artist_id/songs", artistController.GetSongsByArtistID)
-		artistGroup.GET("/detail/:id", controllers.GetArtistDetailByID)
 	}
 	r.GET("/res/singer/:keyword", artistController.GetArtistsBySearch)
 	// 播放器相关路由
