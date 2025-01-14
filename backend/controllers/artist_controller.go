@@ -97,9 +97,8 @@ func (c *ArtistController) GetArtistsBySearch(ctx *gin.Context) {
 
 	for _, artist := range artists {
 		singerInfo := SingerInfo{
-			SingerID:    strconv.Itoa(artist.Artist_id),
-			Name:        artist.Name,
-			Profile_pic: artist.Profile_pic,
+			SingerID: strconv.Itoa(artist.Artist_id),
+			Name:     artist.Name,
 		}
 		response.Singers = append(response.Singers, singerInfo)
 	}
@@ -109,22 +108,22 @@ func (c *ArtistController) GetArtistsBySearch(ctx *gin.Context) {
 
 // SingerInfo 用于返回歌手信息的结构体
 type SingerInfo struct {
-	SingerID    string `json:"singer_id"`
-	Name        string `json:"name"`
-	Profile_pic string `json:"url"`
+	SingerID string `json:"singer_id"`
+	Name     string `json:"name"`
 }
 
 // Artist 歌手信息结构体
 type ArtistDetail struct {
-	Artist models.Artist
-	Songs  []models.Song_ranking_detail `json:"songs"`
+	Artist      models.Artist
+	is_followed string
+	Songs       []models.Song_ranking_detail `json:"songs"`
 }
 
 // GetArtistByID 从数据库根据 id 获取歌手信息
 func GetArtistDetailByID(c *gin.Context) {
 	id := c.Param("id")
 	// 获取当前用户的 ID
-	userID := c.GetString("user_id") // 假设用户 ID 存储在上下文中
+	userID := c.GetString("user_id")
 	isLoggedIn := userID != ""
 	var response ArtistDetail
 	var artist models.Artist
@@ -136,6 +135,28 @@ func GetArtistDetailByID(c *gin.Context) {
 		log.Printf("查询歌手信息失败: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取歌手信息失败，请稍后再试"})
 		return
+	}
+	// 检查用户是否关注该歌手
+	if isLoggedIn {
+		var count int
+		followQuery := `
+			SELECT COUNT(*)
+			FROM follow_artist
+			WHERE follower_id = ? AND followed_id = ?
+		`
+		err := db.QueryRow(followQuery, userID, id).Scan(&count)
+		if err != nil {
+			log.Printf("获取歌手的歌曲信息失败: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "获取歌手的歌曲信息失败！"})
+			return
+		}
+		if count > 0 {
+			response.is_followed = "true"
+		} else {
+			response.is_followed = "false"
+		}
+	} else {
+		response.is_followed = "false" // 用户未登录，默认设置为 false
 	}
 	// 获取该歌手的歌曲信息
 	songs, err := GetSongsByArtistID(artist.Artist_id, userID, isLoggedIn)
