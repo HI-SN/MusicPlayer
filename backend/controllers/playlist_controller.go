@@ -473,3 +473,122 @@ func GetHomePlaylists(c *gin.Context) {
 	randomPlaylists := randomPlaylists(playlists)
 	c.JSON(http.StatusOK, gin.H{"playlists": randomPlaylists})
 }
+
+// 获取我喜欢的歌曲
+func GetSongsOfLikelist(c *gin.Context) {
+	// 获取当前用户的 ID
+	userID := c.GetString("user_id") // 假设用户 ID 存储在上下文中
+	isLoggedIn := userID != ""
+
+	// 查询播放列表中的歌曲 ID
+	query := `
+		SELECT song_id
+		FROM song_info
+		JOIN user_like_song
+		WHERE user_id = ?
+	`
+	rows, err := database.DB.Query(query, userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "获取我喜欢的歌曲失败"})
+		return
+	}
+	defer rows.Close()
+
+	var songs []gin.H
+
+	for rows.Next() {
+		var songID int
+		if err := rows.Scan(&songID); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "获取我喜欢的歌曲失败"})
+			return
+		}
+
+		// 获取歌曲详细信息（复现 GetSongsBySearch 逻辑）
+		var song struct {
+			ID          int
+			Title       string
+			Duration    int
+			AlbumID     int
+			Genre       string
+			ReleaseDate string
+			SongURL     string
+			Lyrics      string
+			CreatedAt   time.Time
+			UpdatedAt   time.Time
+			SongHit     int
+		}
+		songQuery := `
+			SELECT id, title, duration, album_id, genre, release_date, song_url, lyrics, created_at, updated_at, song_hit
+			FROM song_info
+			WHERE id = ?
+		`
+		err := database.DB.QueryRow(songQuery, songID).Scan(
+			&song.ID, &song.Title, &song.Duration, &song.AlbumID, &song.Genre, &song.ReleaseDate,
+			&song.SongURL, &song.Lyrics, &song.CreatedAt, &song.UpdatedAt, &song.SongHit,
+		)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				continue // 如果没有找到歌曲，跳过
+			}
+			return
+		}
+
+		// 获取歌手名称（复现 GetArtistNameBySongID 逻辑）
+		var artistName string
+		artistQuery := `
+			SELECT ai.name
+			FROM artist_info ai
+			JOIN artist_song_relation asr ON ai.id = asr.artist_id
+			WHERE asr.song_id = ?
+		`
+		err = database.DB.QueryRow(artistQuery, songID).Scan(&artistName)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "获取歌手名称失败"})
+			return
+		}
+
+		// 获取专辑名称（复现 GetAlbumNameByID 逻辑）
+		var albumName string
+		var Cover_url string
+		albumQuery := `
+			SELECT name, cover_url
+			FROM album_info
+			WHERE id = ?
+		`
+		err = database.DB.QueryRow(albumQuery, song.AlbumID).Scan(&albumName, &Cover_url)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "获取专辑名称失败"})
+			return
+		}
+
+		// 检查用户是否喜欢该歌曲（复现 IsSongLikedByUser 逻辑）
+		var isLiked bool
+		if isLoggedIn {
+			isLiked = true
+		} else {
+			isLiked = false
+		}
+
+		// 格式化时长
+		minutes := song.Duration / 60
+		seconds := song.Duration % 60
+		formattedDuration := fmt.Sprintf("%02d:%02d", minutes, seconds)
+
+		// 构造歌曲信息
+		// 构造歌曲信息
+		songInfo := gin.H{
+			"id":        strconv.Itoa(song.ID),
+			"title":     song.Title,
+			"singer":    artistName,
+			"album":     albumName,
+			"album_id":  strconv.Itoa(song.AlbumID),
+			"cover_url": Cover_url,
+			"duration":  formattedDuration,
+			"liked":     strconv.FormatBool(isLiked), // 动态设置 liked 字段
+		}
+
+		songs = append(songs, songInfo)
+	}
+
+	c.JSON(http.StatusOK, songs)
+}
