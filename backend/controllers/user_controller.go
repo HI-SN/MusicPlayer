@@ -250,6 +250,10 @@ func (uc *UserController) ChangePassword(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 
 	// 绑定 JSON 到结构体
 	var a = struct {
@@ -347,6 +351,10 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 	user_id, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取user_id失败"})
+		return
+	}
+	if user_id == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
 		return
 	}
 
@@ -502,7 +510,7 @@ func (uc *UserController) GetFollowing(c *gin.Context) {
 	}
 	if pagedArtistList == nil {
 		if pagedUserList == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有的数据范围", "artistList": []interface{}{}, "userList": []interface{}{}})
+			c.JSON(http.StatusOK, gin.H{"message": "缺少关注信息，或请求超过已有的数据范围", "artistList": []interface{}{}, "userList": []interface{}{}})
 		} else {
 			c.JSON(http.StatusOK, gin.H{"message": "成功获取关注列表", "artistList": []interface{}{}, "userList": pagedUserList})
 		}
@@ -573,7 +581,7 @@ func (uc *UserController) GetFollowers(c *gin.Context) {
 	startIndex := (page - 1) * page_size
 	endIndex := startIndex + page_size
 	if startIndex >= len(userList) {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有数据范围", "userList": []interface{}{}})
+		c.JSON(http.StatusOK, gin.H{"message": "缺少关注信息，或请求超过已有的数据范围", "userList": []interface{}{}})
 		return
 	}
 	if endIndex > len(userList) {
@@ -592,6 +600,10 @@ func (uc *UserController) FollowUser(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 	other_id := c.Param("user_id")
 	isFollowed, _ := uc.FService.IsAFollowUserB(userID, other_id)
 	if isFollowed {
@@ -619,6 +631,10 @@ func (uc *UserController) UnfollowUser(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 	other_id := c.Param("user_id")
 	isFollowed, _ := uc.FService.IsAFollowUserB(userID, other_id)
 	if !isFollowed {
@@ -646,6 +662,10 @@ func (uc *UserController) FollowArtist(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 	other_id, _ := strconv.Atoi(c.Param("artist_id"))
 	fa := &models.FollowArtist{
 		Follower_id: userID,
@@ -668,6 +688,10 @@ func (uc *UserController) UnfollowArtist(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 	other_id, _ := strconv.Atoi(c.Param("artist_id"))
 	fa := &models.FollowArtist{
 		Follower_id: userID,
@@ -691,6 +715,10 @@ func (uc *UserController) GetUserBasic(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 
 	user, err := uc.Service.GetUser(userID)
 	if err != nil {
@@ -781,7 +809,7 @@ func (uc *UserController) GetUserArtist(c *gin.Context) {
 	startIndex := (page - 1) * page_size
 	endIndex := startIndex + page_size
 	if startIndex >= len(artistList) {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有数据范围", "artistList": []interface{}{}})
+		c.JSON(http.StatusOK, gin.H{"message": "缺少相关信息，或请求超过已有数据范围", "artistList": []interface{}{}})
 		return
 	}
 	if endIndex > len(artistList) {
@@ -800,6 +828,10 @@ func (uc *UserController) LikeSong(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 	song_id, _ := strconv.Atoi(c.Param("song_id"))
 	uls := &models.UserLikeSong{
 		UserID: userID,
@@ -823,6 +855,10 @@ func (uc *UserController) UnlikeSong(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 	song_id, _ := strconv.Atoi(c.Param("song_id"))
 	uls := &models.UserLikeSong{
 		UserID: userID,
@@ -941,6 +977,10 @@ func (uc *UserController) CreatePlaylist(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 
 	var playlist models.Playlist
 	// 绑定 JSON 到结构体
@@ -968,6 +1008,10 @@ func (uc *UserController) DeletePlaylist(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 
 	playlist_id, _ := strconv.Atoi(c.Param("playlist_id"))
 	err := uc.PService.DeletePlaylistByID(playlist_id, userID)
@@ -997,6 +1041,10 @@ func (uc *UserController) LikePlaylist(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 	playlist_id, _ := strconv.Atoi(c.Param("playlist_id"))
 	ulp := &models.UserLikePlaylist{
 		UserID:     userID,
@@ -1019,6 +1067,10 @@ func (uc *UserController) UnlikePlaylist(c *gin.Context) {
 		return
 	}
 	userID := user_id.(string)
+	if userID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "user_id为空，用户未登录"})
+		return
+	}
 	playlist_id, _ := strconv.Atoi(c.Param("playlist_id"))
 	ulp := &models.UserLikePlaylist{
 		UserID:     userID,
