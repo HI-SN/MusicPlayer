@@ -211,6 +211,7 @@ func SetupRoutes(r *gin.Engine) {
 		messageGroup.GET("/records/:sender_id/:receiver_id", controllers.GetCurrentChatMessages)
 		messageGroup.GET("/comment/:user_id", controllers.GetMomentComments)
 		messageGroup.GET("/private/:user_id", controllers.GetPrivateMessageList)
+		messageGroup.POST("/send", controllers.SendMessage)
 	}
 
 	r.GET("/search/:str", controllers.Search)
