@@ -202,12 +202,22 @@ func (c *SongController) GetSongByID(ctx *gin.Context) {
 		return
 	}
 
-	// 获取当前用户的 ID
-	userID := ctx.GetString("user_id") // 假设用户 ID 存储在上下文中
+	// 从上下文中获取 user_id
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		userID = "" // 如果未登录，设置 userID 为空字符串
+	}
 	isLoggedIn := userID != ""
 
+	// 将 userID 断言为 string 类型
+	userIDStr, ok := userID.(string)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+		return
+	}
+
 	// 调用服务层函数
-	song, artistName, albumName, liked, err := c.SongService.GetSongByID(songID, userID, isLoggedIn)
+	song, artistName, albumName, liked, err := c.SongService.GetSongByID(songID, userIDStr, isLoggedIn)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -457,13 +467,18 @@ func (c *SongController) GetCommentsBySongID(ctx *gin.Context) {
 func (c *SongController) GetSongsBySearch(ctx *gin.Context) {
 	searchKeyword := ctx.Param("search")
 
-	// 从上下文中获取用户 ID
-	userID := ctx.GetString("user_id")
-	var isLoggedIn bool
-	if userID == "" {
-		isLoggedIn = false // 用户未登录
-	} else {
-		isLoggedIn = true // 用户已登录
+	// 从上下文中获取 user_id
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		userID = "" // 如果未登录，设置 userID 为空字符串
+	}
+	isLoggedIn := userID != ""
+
+	// 将 userID 断言为 string 类型
+	userIDStr, ok := userID.(string)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+		return
 	}
 
 	// 调用服务层获取搜索结果
@@ -510,7 +525,7 @@ func (c *SongController) GetSongsBySearch(ctx *gin.Context) {
 		var isLiked bool
 		if isLoggedIn {
 			// 用户已登录，查询是否喜欢该歌曲
-			isLiked, err = c.SongService.IsSongLikedByUser(song.Song_id, userID)
+			isLiked, err = c.SongService.IsSongLikedByUser(song.Song_id, userIDStr)
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return

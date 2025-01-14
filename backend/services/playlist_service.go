@@ -96,40 +96,39 @@ func (p *PlaylistService) DeletePlaylistByID(playlistID int, user_id string) err
 	return err
 }
 
-// GetPlaylistByID 根据播放列表ID获取播放列表信息，包括歌曲信息和用户是否like的信息
-func (p *PlaylistService) GetPlaylistByID(playlistID int) (*models.Playlist, []models.Song, bool, error) {
+// GetPlaylistByID 根据播放列表ID获取播放列表信息，包括歌曲信息
+func (p *PlaylistService) GetPlaylistByID(playlistID int) (*models.Playlist, []models.Song, error) {
 	// 检查播放列表是否存在
 	exists, err := p.CheckPlaylistExists(playlistID)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, nil, err
 	}
 	if !exists {
-		return nil, nil, false, fmt.Errorf("playlist with ID %d does not exist", playlistID)
+		return nil, nil, fmt.Errorf("playlist with ID %d does not exist", playlistID)
 	}
 
 	// 获取歌单基本信息
 	playlist := &models.Playlist{}
-	query := "SELECT id, title, user_id, created_at, description, type, hits, cover_url FROM playlist_info WHERE id=?"
-	err = database.DB.QueryRow(query, playlistID).Scan(&playlist.Playlist_id, &playlist.Title, &playlist.User_id, &playlist.Create_at, &playlist.Description, &playlist.Type, &playlist.Hits, &playlist.Cover_url)
+	query := `
+        SELECT id, title, user_id, created_at, description, type, hits, cover_url
+        FROM playlist_info
+        WHERE id = ?
+    `
+	err = database.DB.QueryRow(query, playlistID).Scan(
+		&playlist.Playlist_id, &playlist.Title, &playlist.User_id, &playlist.Create_at,
+		&playlist.Description, &playlist.Type, &playlist.Hits, &playlist.Cover_url,
+	)
 	if err != nil {
-		return nil, nil, false, fmt.Errorf("failed to get playlist: %v", err)
+		return nil, nil, fmt.Errorf("failed to get playlist: %v", err)
 	}
 
 	// 获取歌单中的歌曲信息
 	songs, err := p.getSongsByPlaylistID(playlistID)
 	if err != nil {
-		return nil, nil, false, fmt.Errorf("failed to get songs: %v", err)
+		return nil, nil, fmt.Errorf("failed to get songs: %v", err)
 	}
 
-	// 获取用户是否like歌单的信息
-	var isLiked bool
-	query = "SELECT EXISTS(SELECT 1 FROM user_like_playlist WHERE playlist_id = ?)"
-	err = database.DB.QueryRow(query, playlistID).Scan(&isLiked)
-	if err != nil {
-		return nil, nil, false, fmt.Errorf("failed to check if playlist is liked: %v", err)
-	}
-
-	return playlist, songs, isLiked, nil
+	return playlist, songs, nil
 }
 
 // getSongsByPlaylistID 获取歌单中的歌曲信息
@@ -531,4 +530,23 @@ func (p *PlaylistService) GetPlaylistsBySearch(keyword string) ([]models.Playlis
 	}
 
 	return playlists, nil
+}
+
+// IsPlaylistLikedByUser 检查用户是否喜欢该歌单
+func (p *PlaylistService) IsPlaylistLikedByUser(playlistID int, userID string) (bool, error) {
+	var count int
+	query := `
+        SELECT COUNT(*)
+        FROM user_like_playlist
+        WHERE user_id = ? AND playlist_id = ?
+    `
+	err := database.DB.QueryRow(query, userID, playlistID).Scan(&count)
+	if err != nil {
+		// 如果没有找到记录，默认返回 false
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+	return count > 0, nil
 }

@@ -42,7 +42,6 @@ func (pc *PlaylistController) CreatePlaylist(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Playlist created", "playlist": playlist})
 }
 
-// GetPlaylist 处理获取歌单详细信息请求
 func (pc *PlaylistController) GetPlaylist(c *gin.Context) {
 	playlistID, err := strconv.Atoi(c.Param("playlist_id"))
 	if err != nil {
@@ -50,11 +49,37 @@ func (pc *PlaylistController) GetPlaylist(c *gin.Context) {
 		return
 	}
 
+	// 从上下文中获取 user_id
+	userID, exists := c.Get("user_id")
+	if !exists {
+		userID = "" // 如果未登录，设置 userID 为空字符串
+	}
+	isLoggedIn := userID != ""
+
+	// 将 userID 断言为 string 类型
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+		return
+	}
+
 	// 调用服务层函数
-	playlist, songs, isLiked, err := pc.Service.GetPlaylistByID(playlistID)
+	playlist, songs, err := pc.Service.GetPlaylistByID(playlistID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// 检查用户是否喜欢该歌单
+	var isLiked bool
+	if isLoggedIn {
+		isLiked, err = pc.Service.IsPlaylistLikedByUser(playlistID, userIDStr)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	} else {
+		isLiked = false // 用户未登录，默认设置为 false
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -171,12 +196,22 @@ func (pc *PlaylistController) GetSongsByPlaylistID(c *gin.Context) {
 		return
 	}
 
-	// 从上下文中获取用户 ID，判断用户是否登录
-	userID := c.GetString("user_id")
+	// 从上下文中获取 user_id
+	userID, exists := c.Get("user_id")
+	if !exists {
+		userID = "" // 如果未登录，设置 userID 为空字符串
+	}
 	isLoggedIn := userID != ""
 
+	// 将 userID 断言为 string 类型
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+		return
+	}
+
 	// 调用服务层函数
-	songs, err := pc.Service.GetSongsByPlaylistID(playlistID, userID, isLoggedIn)
+	songs, err := pc.Service.GetSongsByPlaylistID(playlistID, userIDStr, isLoggedIn)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
