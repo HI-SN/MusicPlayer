@@ -502,7 +502,7 @@ func (uc *UserController) GetFollowing(c *gin.Context) {
 	}
 	if pagedArtistList == nil {
 		if pagedUserList == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有的数据范围", "artistList": []interface{}{}, "userList": []interface{}{}})
+			c.JSON(http.StatusOK, gin.H{"message": "缺少关注信息，或请求超过已有的数据范围", "artistList": []interface{}{}, "userList": []interface{}{}})
 		} else {
 			c.JSON(http.StatusOK, gin.H{"message": "成功获取关注列表", "artistList": []interface{}{}, "userList": pagedUserList})
 		}
@@ -573,7 +573,7 @@ func (uc *UserController) GetFollowers(c *gin.Context) {
 	startIndex := (page - 1) * page_size
 	endIndex := startIndex + page_size
 	if startIndex >= len(userList) {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有数据范围", "userList": []interface{}{}})
+		c.JSON(http.StatusOK, gin.H{"message": "缺少关注信息，或请求超过已有的数据范围", "userList": []interface{}{}})
 		return
 	}
 	if endIndex > len(userList) {
