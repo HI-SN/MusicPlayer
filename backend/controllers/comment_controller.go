@@ -231,7 +231,7 @@ func GetMomentComments(c *gin.Context) {
 		JOIN
 		    moment_info mi ON mi.id = ci.target_id
         WHERE 
-            mi.user_id =? AND ci.type = '动态评论'
+            mi.user_id =? AND ci.type = 'moment'
     `
 	rows, err := db.Query(query, userID)
 	if err != nil {
