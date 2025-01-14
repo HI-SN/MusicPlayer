@@ -86,6 +86,9 @@ func SetupRoutes(r *gin.Engine) {
 		authRequiredGroup.DELETE("/user/unlike/playlist/:playlist_id", userController.UnlikePlaylist)
 		authRequiredGroup.POST("/user/like/song/:song_id", userController.LikeSong)
 		authRequiredGroup.DELETE("/user/unlike/song/:song_id", userController.UnlikeSong)
+		authRequiredGroup.GET("/user/:user_id/followers", userController.GetFollowers)
+		authRequiredGroup.GET("/user/:user_id/following", userController.GetFollowing)
+		authRequiredGroup.GET("/user/:user_id/artist", userController.GetUserArtist)
 		// 动态相关
 		authRequiredGroup.POST("/comment/moment/:moment_id", commentController.CreateMomentComment)
 		authRequiredGroup.POST("/moment", momentController.CreateMoment)
@@ -102,9 +105,6 @@ func SetupRoutes(r *gin.Engine) {
 	userGroup := r.Group("/user")
 	{
 		userGroup.GET("/:user_id", userController.GetUser)
-		userGroup.GET("/:user_id/following", userController.GetFollowing)
-		userGroup.GET("/:user_id/followers", userController.GetFollowers)
-		userGroup.GET("/:user_id/artist", userController.GetUserArtist)
 		userGroup.GET("/:user_id/like/song", userController.GetUserLikeSong)
 		userGroup.GET("/:user_id/playlist", userController.GetUserPlaylist)
 		userGroup.GET("/:user_id/like/playlist", userController.GetUserLikePlaylist)

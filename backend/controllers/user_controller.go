@@ -358,6 +358,15 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 // 以下是我的主页相关的代码
 // 获取关注列表
 func (uc *UserController) GetFollowing(c *gin.Context) {
+	// 获取登录用户ID，如果获取不到则为游客
+	var loginUserID string
+	if userID, exists := c.Get("user_id"); exists {
+		loginUserID = userID.(string)
+	} else {
+		// 处理游客用户逻辑，例如设置默认值或者跳过某些逻辑
+		loginUserID = ""
+	}
+
 	// 先获取关注的歌手列表
 	faIDs, err := uc.FService.GetFollowingArtistList(c.Param("user_id"))
 	if err != nil {
@@ -376,11 +385,18 @@ func (uc *UserController) GetFollowing(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetArtistFollowerCount failed"})
 			return
 		}
+		// 修改为使用登录用户ID判断是否关注
+		isFollowed, err := uc.FService.IsAFollowArtistB(loginUserID, id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "IsAFollowUserB failed"})
+			return
+		}
 		uFollowA := &models.UserFollowArtist{
 			Followed_id:     id,
 			Name:            artist.Name,
 			Profile_pic:     artist.Profile_pic,
 			Followers_count: fCount,
+			IsFollowed:      isFollowed,
 		}
 		artistList = append(artistList, uFollowA)
 	}
@@ -414,6 +430,12 @@ func (uc *UserController) GetFollowing(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserFollowingCount failed"})
 			return
 		}
+		// 修改为使用登录用户ID判断是否关注
+		isFollowed, err := uc.FService.IsAFollowUserB(loginUserID, id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "IsAFollowUserB failed"})
+			return
+		}
 		uFollowU := &models.UserFollowUser{
 			Followed_id:     id,
 			User_name:       uesr.User_name,
@@ -421,6 +443,7 @@ func (uc *UserController) GetFollowing(c *gin.Context) {
 			Moments_count:   mCount,
 			Followers_count: flerCount,
 			Following_count: flinCount,
+			IsFollowed:      isFollowed,
 		}
 		userList = append(userList, uFollowU)
 	}
@@ -470,6 +493,15 @@ func (uc *UserController) GetFollowing(c *gin.Context) {
 
 // 获取粉丝列表
 func (uc *UserController) GetFollowers(c *gin.Context) {
+	// 获取登录用户ID，如果获取不到则为游客
+	var loginUserID string
+	if userID, exists := c.Get("user_id"); exists {
+		loginUserID = userID.(string)
+	} else {
+		// 处理游客用户逻辑，例如设置默认值或者跳过某些逻辑
+		loginUserID = ""
+	}
+
 	fuIDs, err := uc.FService.GetFollowerUserList(c.Param("user_id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
@@ -497,7 +529,8 @@ func (uc *UserController) GetFollowers(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err, "message": "GetUserFollowingCount failed"})
 			return
 		}
-		isFollowed, err := uc.FService.IsAFollowUserB(c.Param("user_id"), id)
+		// 修改为使用登录用户ID判断是否关注
+		isFollowed, err := uc.FService.IsAFollowUserB(loginUserID, id)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "IsAFollowUserB failed"})
 			return
@@ -527,7 +560,7 @@ func (uc *UserController) GetFollowers(c *gin.Context) {
 		endIndex = len(userList)
 	}
 	pagedFollowingList := userList[startIndex:endIndex]
-	c.JSON(http.StatusOK, gin.H{"message": "成功获取粉丝列表", "userList": pagedFollowingList, "len": len(userList)})
+	c.JSON(http.StatusOK, gin.H{"message": "成功获取粉丝列表", "userList": pagedFollowingList, "LoginUser": loginUserID})
 }
 
 // 关注其他用户
@@ -540,6 +573,11 @@ func (uc *UserController) FollowUser(c *gin.Context) {
 	}
 	userID := user_id.(string)
 	other_id := c.Param("user_id")
+	isFollowed, _ := uc.FService.IsAFollowUserB(userID, other_id)
+	if isFollowed {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "已关注过该用户"})
+		return
+	}
 	fu := &models.FollowUser{
 		Follower_id: userID,
 		Followed_id: other_id,
@@ -562,6 +600,11 @@ func (uc *UserController) UnfollowUser(c *gin.Context) {
 	}
 	userID := user_id.(string)
 	other_id := c.Param("user_id")
+	isFollowed, _ := uc.FService.IsAFollowUserB(userID, other_id)
+	if !isFollowed {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "未关注该用户，无法取关"})
+		return
+	}
 	fu := &models.FollowUser{
 		Follower_id: userID,
 		Followed_id: other_id,

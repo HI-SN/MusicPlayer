@@ -10,7 +10,7 @@ import (
 
 // 定义需要身份验证的路径列表
 var authRequiredPaths = []string{
-	"/api/v1/change-password",
+	"/v1/change-password",
 	// "/api/v1/moment",
 	// 其他需要身份验证的路径
 }

@@ -35,6 +35,20 @@ func (fs *FollowService) IsAFollowUserB(userAID string, userBID string) (bool, e
 	}
 }
 
+// 检查用户A是否关注歌手B
+func (fs *FollowService) IsAFollowArtistB(userAID string, artistBID int) (bool, error) {
+	var count int
+	err := database.DB.QueryRow("SELECT COUNT(*) FROM follow_artist WHERE follower_id = ? AND followed_id = ?", userAID, artistBID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	if count < 1 {
+		return false, nil
+	} else {
+		return true, nil
+	}
+}
+
 // 根据用户id获取关注列表（用户）
 func (fs *FollowService) GetFollowingUserList(userID string) ([]string, error) {
 	// 执行查询

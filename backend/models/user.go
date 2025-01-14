@@ -31,6 +31,7 @@ type UserFollowArtist struct {
 	Name            string `json:"name"`
 	Profile_pic     string `json:"profile_pic"`
 	Followers_count int    `json:"followers_count"`
+	IsFollowed      bool   `json:"isFollowed"`
 }
 
 // 同上
