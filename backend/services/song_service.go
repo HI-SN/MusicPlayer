@@ -47,11 +47,10 @@ func (s *SongService) CreateSong(title string, artistID int, duration int, album
 }
 
 // GetSongByID retrieves a song by its ID along with artist name, album name, and liked status
-func (s *SongService) GetSongByID(songID int, userID string, isLoggedIn bool) (*models.Song, string, string, string, error) {
+func (s *SongService) GetSongByID(songID int, userID string, isLoggedIn bool) (*models.Song, string, string, string, string, error) {
 	db := database.DB
 
 	var song models.Song
-	var artistName, albumName string
 
 	// 查询歌曲信息
 	query := `
@@ -64,69 +63,32 @@ func (s *SongService) GetSongByID(songID int, userID string, isLoggedIn bool) (*
 		&song.Song_url, &song.Lyrics, &song.Created_at, &song.Updated_at, &song.Song_hit,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, "", "", "", errors.New("song not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, "", "", "", "", errors.New("song not found")
 		}
-		return nil, "", "", "", err
+		return nil, "", "", "", "", err
 	}
 
-	// 查询艺术家与歌曲的关系
-	var artistID int
-	relationQuery := `
-		SELECT artist_id
-		FROM artist_song_relation
-		WHERE song_id = ?
-	`
-	err = db.QueryRow(relationQuery, songID).Scan(&artistID)
+	// 查询歌手名称
+	artistName, err := s.GetArtistNameBySongID(songID)
 	if err != nil {
-		return nil, "", "", "", err
+		return nil, "", "", "", "", err
 	}
 
-	// 查询艺术家信息
-	artistQuery := `
-		SELECT name
-		FROM artist_info
-		WHERE id = ?
-	`
-	err = db.QueryRow(artistQuery, artistID).Scan(&artistName)
+	// 查询专辑名称和封面URL
+	albumName, coverURL, err := s.GetAlbumByID(song.Album_id)
 	if err != nil {
-		return nil, "", "", "", err
-	}
-
-	// 查询专辑信息
-	albumQuery := `
-		SELECT name
-		FROM album_info
-		WHERE id = ?
-	`
-	err = db.QueryRow(albumQuery, song.Album_id).Scan(&albumName)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			albumName = "" // 如果没有专辑信息，设置为空字符串
-		} else {
-			return nil, "", "", "", err
-		}
+		return nil, "", "", "", "", err
 	}
 
 	// 检查用户是否喜欢该歌曲
-	var liked string
-	if isLoggedIn {
-		var count int
-		likeQuery := `
-			SELECT COUNT(*)
-			FROM user_like_song
-			WHERE user_id = ? AND song_id = ?
-		`
-		err := db.QueryRow(likeQuery, userID, songID).Scan(&count)
-		if err != nil {
-			return nil, "", "", "", err
-		}
-		liked = strconv.FormatBool(count > 0)
-	} else {
-		liked = "false" // 用户未登录，默认设置为 false
+	liked, err := s.IsSongLikedByUser(songID, userID)
+	if err != nil {
+		return nil, "", "", "", "", err
 	}
+	likedStr := strconv.FormatBool(liked)
 
-	return &song, artistName, albumName, liked, nil
+	return &song, artistName, albumName, coverURL, likedStr, nil
 }
 
 func (s *SongService) UpdateSongInfo(songID int, title string, duration int, albumID int, genre string, releaseDate time.Time, songURL string, lyrics string) error {
@@ -376,23 +338,24 @@ func (s *SongService) GetArtistNameBySongID(songID int) (string, error) {
 	return artistName, nil
 }
 
-// GetAlbumNameByID 根据专辑ID获取专辑名称
-func (s *SongService) GetAlbumNameByID(albumID int) (string, error) {
+// GetAlbumByID 根据专辑ID获取专辑
+func (s *SongService) GetAlbumByID(albumID int) (string, string, error) {
 	var albumName string
+	var Cover_url string
 	query := `
-		SELECT name
+		SELECT name, cover_url
 		FROM album_info
 		WHERE id = ?
 	`
-	err := database.DB.QueryRow(query, albumID).Scan(&albumName)
+	err := database.DB.QueryRow(query, albumID).Scan(&albumName, &Cover_url)
 	if err != nil {
 		// 如果没有找到专辑，返回空字符串
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", nil
+			return "", "", nil
 		}
-		return "", err
+		return "", "", err
 	}
-	return albumName, nil
+	return albumName, Cover_url, nil
 }
 
 // IsSongLikedByUser 检查用户是否喜欢该歌曲

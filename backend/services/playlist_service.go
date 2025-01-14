@@ -322,12 +322,13 @@ func (p *PlaylistService) GetSongsByPlaylistID(playlistID int, userID string, is
 
 		// 获取专辑名称（复现 GetAlbumNameByID 逻辑）
 		var albumName string
+		var Cover_url string
 		albumQuery := `
-			SELECT name
+			SELECT name, cover_url
 			FROM album_info
 			WHERE id = ?
 		`
-		err = database.DB.QueryRow(albumQuery, song.AlbumID).Scan(&albumName)
+		err = database.DB.QueryRow(albumQuery, song.AlbumID).Scan(&albumName, &Cover_url)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
@@ -357,13 +358,14 @@ func (p *PlaylistService) GetSongsByPlaylistID(playlistID int, userID string, is
 
 		// 构造歌曲信息
 		songInfo := gin.H{
-			"id":       strconv.Itoa(song.ID),
-			"title":    song.Title,
-			"singer":   artistName,
-			"album":    albumName,
-			"album_id": strconv.Itoa(song.AlbumID),
-			"duration": formattedDuration,
-			"liked":    strconv.FormatBool(isLiked), // 动态设置 liked 字段
+			"id":        strconv.Itoa(song.ID),
+			"title":     song.Title,
+			"singer":    artistName,
+			"album":     albumName,
+			"album_id":  strconv.Itoa(song.AlbumID),
+			"cover_url": Cover_url,
+			"duration":  formattedDuration,
+			"liked":     strconv.FormatBool(isLiked), // 动态设置 liked 字段
 		}
 
 		songs = append(songs, songInfo)

@@ -97,8 +97,9 @@ func (c *ArtistController) GetArtistsBySearch(ctx *gin.Context) {
 
 	for _, artist := range artists {
 		singerInfo := SingerInfo{
-			SingerID: strconv.Itoa(artist.Artist_id),
-			Name:     artist.Name,
+			SingerID:    strconv.Itoa(artist.Artist_id),
+			Name:        artist.Name,
+			Profile_pic: artist.Profile_pic,
 		}
 		response.Singers = append(response.Singers, singerInfo)
 	}
@@ -108,8 +109,9 @@ func (c *ArtistController) GetArtistsBySearch(ctx *gin.Context) {
 
 // SingerInfo 用于返回歌手信息的结构体
 type SingerInfo struct {
-	SingerID string `json:"singer_id"`
-	Name     string `json:"name"`
+	SingerID    string `json:"singer_id"`
+	Name        string `json:"name"`
+	Profile_pic string `json:"url"`
 }
 
 // Artist 歌手信息结构体

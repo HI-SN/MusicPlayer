@@ -217,7 +217,7 @@ func (c *SongController) GetSongByID(ctx *gin.Context) {
 	}
 
 	// 调用服务层函数
-	song, artistName, albumName, liked, err := c.SongService.GetSongByID(songID, userIDStr, isLoggedIn)
+	song, artistName, albumName, Cover_url, liked, err := c.SongService.GetSongByID(songID, userIDStr, isLoggedIn)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -230,6 +230,7 @@ func (c *SongController) GetSongByID(ctx *gin.Context) {
 		"artist_name":  artistName,
 		"duration":     song.Duration,
 		"album_name":   albumName,
+		"cover_url":    Cover_url,
 		"album_id":     song.Album_id,
 		"genre":        song.Genre,
 		"release_date": song.Release_date,
@@ -515,7 +516,7 @@ func (c *SongController) GetSongsBySearch(ctx *gin.Context) {
 		}
 
 		// 获取专辑名称
-		albumName, err := c.SongService.GetAlbumNameByID(song.Album_id)
+		albumName, Cover_url, err := c.SongService.GetAlbumByID(song.Album_id)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -537,13 +538,14 @@ func (c *SongController) GetSongsBySearch(ctx *gin.Context) {
 
 		// 构造歌曲信息
 		songInfo := SongInfo{
-			ID:       strconv.Itoa(song.Song_id),
-			Title:    song.Title,
-			Singer:   artistName,
-			Album:    albumName,
-			Album_id: song.Album_id,
-			IfLike:   strconv.FormatBool(isLiked),
-			Time:     formatDuration(song.Duration),
+			ID:        strconv.Itoa(song.Song_id),
+			Title:     song.Title,
+			Singer:    artistName,
+			Album:     albumName,
+			Cover_url: Cover_url,
+			Album_id:  song.Album_id,
+			IfLike:    strconv.FormatBool(isLiked),
+			Time:      formatDuration(song.Duration),
 		}
 		response.Data = append(response.Data, songInfo)
 	}
@@ -553,13 +555,14 @@ func (c *SongController) GetSongsBySearch(ctx *gin.Context) {
 
 // SongInfo 用于返回歌曲信息的结构体
 type SongInfo struct {
-	ID       string `json:"id"`
-	Title    string `json:"title"`
-	Singer   string `json:"singer"`
-	Album    string `json:"album"`
-	Album_id int    `json:"album_id"`
-	IfLike   string `json:"liked"`
-	Time     string `json:"duration"`
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Singer    string `json:"singer"`
+	Album     string `json:"album"`
+	Cover_url string `json:"cover_url"`
+	Album_id  int    `json:"album_id"`
+	IfLike    string `json:"liked"`
+	Time      string `json:"duration"`
 }
 
 // formatDuration 将秒数转换为 "mm:ss" 格式
