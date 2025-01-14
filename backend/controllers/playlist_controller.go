@@ -5,6 +5,7 @@ import (
 	"backend/models"
 	"backend/services"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -371,11 +372,48 @@ func (c *PlaylistController) GetPlaylistsBySearch(ctx *gin.Context) {
 	response.Lists = make([]PlaylistInfo, 0)
 
 	for _, playlist := range playlists {
+		// 从 user_info 表中获取 user_name
+		var userName string
+		userQuery := `
+			SELECT user_name
+			FROM user_info
+			WHERE user_id = ?
+		`
+		err := database.DB.QueryRow(userQuery, playlist.User_id).Scan(&userName)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				userName = "" // 如果没有找到用户，设置为空字符串
+			} else {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+
+		// 从 song_playlist_relation 表中统计 song_id 的数量
+		var sum int
+		sumQuery := `
+			SELECT COUNT(song_id) AS sum
+			FROM song_playlist_relation
+			WHERE playlist_id = ?
+		`
+		err = database.DB.QueryRow(sumQuery, playlist.Playlist_id).Scan(&sum)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				sum = 0 // 如果没有找到歌曲，设置为 0
+			} else {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+
+		// 构造歌单信息
 		playlistInfo := PlaylistInfo{
 			ListID:    strconv.Itoa(playlist.Playlist_id),
 			Title:     playlist.Title,
 			Cover_url: playlist.Cover_url,
-			Sum:       playlist.Hits,
+			User_name: userName,
+			Create_at: playlist.Create_at,
+			Sum:       sum,
 		}
 		response.Lists = append(response.Lists, playlistInfo)
 	}
@@ -385,10 +423,12 @@ func (c *PlaylistController) GetPlaylistsBySearch(ctx *gin.Context) {
 
 // PlaylistInfo 用于返回歌单信息的结构体
 type PlaylistInfo struct {
-	ListID    string `json:"list_id"`
-	Title     string `json:"title"`
-	Cover_url string `json:"cover_url"`
-	Sum       int    `json:"sum"`
+	ListID    string    `json:"list_id"`
+	Title     string    `json:"title"`
+	User_name string    `json:"user_name"`
+	Cover_url string    `json:"cover_url"`
+	Create_at time.Time `json:"created_at"`
+	Sum       int       `json:"sum"`
 }
 
 func randomPlaylists(playlists []models.PlaylistResponse) []models.PlaylistResponse {
