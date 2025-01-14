@@ -11,7 +11,7 @@
  Target Server Version : 80018
  File Encoding         : 65001
 
- Date: 15/01/2025 01:18:56
+ Date: 15/01/2025 04:35:09
 */
 
 SET NAMES utf8mb4;
@@ -46,6 +46,9 @@ INSERT INTO `album_info` VALUES (10, 'V', '【V】是罗马数字的「五」，
 INSERT INTO `album_info` VALUES (11, 'Overexposed (Deluxe)', '\r\n【Overexposed】是历年专辑中最像也是最不像魔力红的作品，因为当中有他们一路走来所留下的精彩轨迹，同时又蕴含了前所未有的全新创意。', '2012-06-20', 'http://p1.music.126.net/zhb4NhgP262N24X7RmQBGg==/3222668584137511.jpg?param=177y177');
 INSERT INTO `album_info` VALUES (12, 'The Best Ever Piano Classics', 'The Best Ever Piano Classics', '1999-03-16', 'http://p1.music.126.net/73-aaCvFEMzYWhk8sXxVvQ==/1729531790501554.jpg?param=177y177');
 INSERT INTO `album_info` VALUES (13, 'Alone', '《Alone》是美国DJ和电音制作人Marshmello的一首热单，同时也是猫厂Monstercat的一首获得RIAA美国唱片工业协会销量认证的单曲。', '2016-05-13', 'http://p2.music.126.net/4hbR27M-uaKZVAOUojERTA==/109951168003842438.jpg?param=177y177');
+INSERT INTO `album_info` VALUES (14, 'WALK - The 6th Album', '全世界等待的“K-POP英雄”回归！', '2024-07-15', 'https://p2.music.126.net/a2LTtXceOOwh7flZqr-4Mw==/109951169866453987.jpg?param=177y177');
+INSERT INTO `album_info` VALUES (15, '‘The ReVe Festival’ Finale', 'Red Velvet，2019年音乐庆典华丽最终章！', '2019-12-23', 'https://p2.music.126.net/p3m7nswR_S2VjHqu71kKxg==/109951167760346730.jpg?param=177y177');
+INSERT INTO `album_info` VALUES (16, 'Miracles In December', 'EXO于12月9日发布冬季特别专辑《12月的奇迹》，并计划展开温暖的特别舞台。', '2013-12-09', 'https://p2.music.126.net/Glv3YRUt7wh2lc339Ykd-g==/18527870440277729.jpg?param=177y177');
 
 -- ----------------------------
 -- Table structure for artist_album_relation
@@ -76,6 +79,9 @@ INSERT INTO `artist_album_relation` VALUES (8, 10);
 INSERT INTO `artist_album_relation` VALUES (8, 11);
 INSERT INTO `artist_album_relation` VALUES (2, 12);
 INSERT INTO `artist_album_relation` VALUES (3, 13);
+INSERT INTO `artist_album_relation` VALUES (9, 14);
+INSERT INTO `artist_album_relation` VALUES (10, 15);
+INSERT INTO `artist_album_relation` VALUES (11, 16);
 
 -- ----------------------------
 -- Table structure for artist_info
@@ -102,6 +108,9 @@ INSERT INTO `artist_info` VALUES (5, '周柏豪', '1', 'http://p1.music.126.net/
 INSERT INTO `artist_info` VALUES (6, '周慧敏', '1', 'http://p1.music.126.net/AyMpC-0FrTVq--3ZN21HkQ==/109951168314010164.jpg?param=640y300', '流行歌手', '中国');
 INSERT INTO `artist_info` VALUES (7, '郭顶', '1', 'http://p1.music.126.net/7OoAuH2Iqjr3Owmqf4pNFQ==/109951165912271970.jpg?param=640y300', '流行歌手', '中国');
 INSERT INTO `artist_info` VALUES (8, 'Maroon 5', '1', 'http://p1.music.126.net/L6Vf-GYbpOroZbQo_yxFzg==/109951169421839676.jpg?param=640y300', '乐队', '欧美');
+INSERT INTO `artist_info` VALUES (9, 'NCT127', '划数', '	https://p2.music.126.net/iSYZmktYfHWuoWbjJj56fw==/109951169913665206.jpg?param=130y130', '男团', '韩国');
+INSERT INTO `artist_info` VALUES (10, 'Red Velvet', '莱德贝贝', 'https://p2.music.126.net/_orn5sSfaUVOXsYqkul1Ow==/109951170290688256.jpg?param=130y130', '女团', '韩国');
+INSERT INTO `artist_info` VALUES (11, 'EXO', '地', 'https://p1.music.126.net/13uIhYsC21O2fF76gYwF_A==/109951168721802905.jpg?param=130y130', '男团', '韩国');
 
 -- ----------------------------
 -- Table structure for artist_song_relation
@@ -140,6 +149,9 @@ INSERT INTO `artist_song_relation` VALUES (8, 18);
 INSERT INTO `artist_song_relation` VALUES (8, 19);
 INSERT INTO `artist_song_relation` VALUES (2, 20);
 INSERT INTO `artist_song_relation` VALUES (3, 21);
+INSERT INTO `artist_song_relation` VALUES (9, 22);
+INSERT INTO `artist_song_relation` VALUES (10, 23);
+INSERT INTO `artist_song_relation` VALUES (11, 24);
 
 -- ----------------------------
 -- Table structure for comment_info
@@ -160,41 +172,20 @@ CREATE TABLE `comment_info`  (
 -- ----------------------------
 -- Records of comment_info
 -- ----------------------------
-INSERT INTO `comment_info` VALUES (8, 'aaaa nice', '2024-11-24 18:27:34', 'CrMhKMGnQH6R-Vq', 'song', 3);
-INSERT INTO `comment_info` VALUES (9, 'asdfasdf', '2024-11-24 18:28:01', 'CrMhKMGnQH6R-Vq', 'song', 3);
-INSERT INTO `comment_info` VALUES (10, 'asdfasdf', '2024-11-24 18:28:13', 'CrMhKMGnQH6R-Vq', 'song', 3);
-INSERT INTO `comment_info` VALUES (11, 'zxcasd   sdd', '2024-11-24 18:28:42', 'e9nRUN7ZRB6pDw6', 'song', 3);
-INSERT INTO `comment_info` VALUES (12, 'zxcasd   sdd', '2024-11-24 18:28:45', 'e9nRUN7ZRB6pDw6', 'song', 3);
-INSERT INTO `comment_info` VALUES (13, 'zxcasd   sdd', '2024-11-24 18:33:45', 'e9nRUN7ZRB6pDw6', 'song', 3);
-INSERT INTO `comment_info` VALUES (14, 'zxcasd   sdd', '2024-11-24 18:34:00', 'e9nRUN7ZRB6pDw6', 'song', 3);
-INSERT INTO `comment_info` VALUES (15, 'zxcasd   sdd', '2024-11-24 18:34:25', 'e9nRUN7ZRB6pDw6', 'song', 3);
-INSERT INTO `comment_info` VALUES (18, 'cupidatat', '2024-12-07 08:31:05', 'e9nRUN7ZRB6pDw6', 'moment', 20);
-INSERT INTO `comment_info` VALUES (19, 'cupidatat', '2024-12-07 08:32:32', 'e9nRUN7ZRB6pDw6', 'moment', 20);
-INSERT INTO `comment_info` VALUES (20, 'enim velit', '2024-12-07 09:07:15', 'e9nRUN7ZRB6pDw6', 'moment', 20);
-INSERT INTO `comment_info` VALUES (21, 'commodo', '2024-12-07 09:07:19', 'e9nRUN7ZRB6pDw6', 'moment', 20);
-INSERT INTO `comment_info` VALUES (22, 'nulla qui reprehenderit', '2024-12-07 09:07:21', 'e9nRUN7ZRB6pDw6', 'moment', 20);
-INSERT INTO `comment_info` VALUES (24, 'tempor voluptate minim pariatur laborum', '2024-12-07 12:55:54', 'e9nRUN7ZRB6pDw6', 'moment', 20);
-
--- ----------------------------
--- Table structure for download_info
--- ----------------------------
-DROP TABLE IF EXISTS `download_info`;
-CREATE TABLE `download_info`  (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `song_id` int(11) NULL DEFAULT NULL,
-  `download_time` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  `file_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `download_fk1`(`user_id` ASC) USING BTREE,
-  INDEX `download_fk2`(`song_id` ASC) USING BTREE,
-  CONSTRAINT `download_fk1` FOREIGN KEY (`user_id`) REFERENCES `user_info` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `download_fk2` FOREIGN KEY (`song_id`) REFERENCES `song_info` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
-
--- ----------------------------
--- Records of download_info
--- ----------------------------
+INSERT INTO `comment_info` VALUES (8, 'aaaa nice', '2024-11-24 18:27:34', 'CrMhKMGnQH6R-Vq', 'moment', 6);
+INSERT INTO `comment_info` VALUES (9, 'asdfasdf', '2024-11-24 18:28:01', 'CrMhKMGnQH6R-Vq', 'moment', 11);
+INSERT INTO `comment_info` VALUES (10, 'asdfasdf', '2024-11-24 18:28:13', 'CrMhKMGnQH6R-Vq', 'moment', 13);
+INSERT INTO `comment_info` VALUES (11, 'zxcasd   sdd', '2024-11-24 18:28:42', 'e9nRUN7ZRB6pDw6', 'moment', 18);
+INSERT INTO `comment_info` VALUES (12, 'zxcasd   sdd', '2024-11-24 18:28:45', 'e9nRUN7ZRB6pDw6', 'moment', 18);
+INSERT INTO `comment_info` VALUES (13, 'zxcasd   sdd', '2024-11-24 18:33:45', 'e9nRUN7ZRB6pDw6', 'moment', 19);
+INSERT INTO `comment_info` VALUES (14, 'zxcasd   sdd', '2024-11-24 18:34:00', 'e9nRUN7ZRB6pDw6', 'moment', 19);
+INSERT INTO `comment_info` VALUES (15, 'zxcasd   sdd', '2024-11-24 18:34:25', 'e9nRUN7ZRB6pDw6', 'moment', 19);
+INSERT INTO `comment_info` VALUES (18, 'cupidatat', '2024-12-07 08:31:05', 'e9nRUN7ZRB6pDw6', 'moment', 15);
+INSERT INTO `comment_info` VALUES (19, 'cupidatat', '2024-12-07 08:32:32', 'e9nRUN7ZRB6pDw6', 'moment', 15);
+INSERT INTO `comment_info` VALUES (20, 'enim velit', '2024-12-07 09:07:15', 'e9nRUN7ZRB6pDw6', 'moment', 15);
+INSERT INTO `comment_info` VALUES (21, 'commodo', '2024-12-07 09:07:19', 'e9nRUN7ZRB6pDw6', 'moment', 8);
+INSERT INTO `comment_info` VALUES (22, 'nulla qui reprehenderit', '2024-12-07 09:07:21', 'e9nRUN7ZRB6pDw6', 'moment', 9);
+INSERT INTO `comment_info` VALUES (24, 'tempor voluptate minim pariatur laborum', '2024-12-07 12:55:54', 'e9nRUN7ZRB6pDw6', 'moment', 12);
 
 -- ----------------------------
 -- Table structure for follow_artist
@@ -314,25 +305,6 @@ INSERT INTO `like_info` VALUES (19, 'ZRQ6M-UcS2yedwY');
 INSERT INTO `like_info` VALUES (20, 'ZRQ6M-UcS2yedwY');
 
 -- ----------------------------
--- Table structure for local_songlist
--- ----------------------------
-DROP TABLE IF EXISTS `local_songlist`;
-CREATE TABLE `local_songlist`  (
-  `song_id` int(11) NOT NULL,
-  `user_id` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `file_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `added_time` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`song_id`, `user_id`) USING BTREE,
-  INDEX `local_fk2`(`user_id` ASC) USING BTREE,
-  CONSTRAINT `local_fk1` FOREIGN KEY (`song_id`) REFERENCES `song_info` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `local_fk2` FOREIGN KEY (`user_id`) REFERENCES `user_info` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
-
--- ----------------------------
--- Records of local_songlist
--- ----------------------------
-
--- ----------------------------
 -- Table structure for message_info
 -- ----------------------------
 DROP TABLE IF EXISTS `message_info`;
@@ -413,7 +385,7 @@ CREATE TABLE `playlist_info`  (
 -- Records of playlist_info
 -- ----------------------------
 INSERT INTO `playlist_info` VALUES (1, '那些被单曲循环无数次的歌', 'CrMhKMGnQH6R-Vq', '2023-12-01 19:51:45', '爱听就多多循环吧！每日更新，感谢支持！', '流行', 1998, 'https://p1.music.126.net/VHR1M8wfyhbNfwBfjqAiTw==/109951165473515928.jpg?param=200y200');
-INSERT INTO `playlist_info` VALUES (2, '悲情古风：他朝若是同淋雪，此生也算共白头', 'e9nRUN7ZRB6pDw6', '2021-06-01 20:42:49', '这句话充满了悲情与古风之美，它描述了一种无奈中的深情，一种即便无法长久相守，也希望在某个瞬间能与你共同经历的情感。。“他朝若是同淋雪”，这里的“他朝”指的是未来的某一天，而“同淋雪”则是一种情景的描绘，意味着在未来的某个时刻，两人能够一同经历风雪。这里的“雪”不仅仅是一种自然现象，更是象征着生活中的艰辛与困境。“此生也算共白头”，这里的“白头”通常指的是夫妻共度一生，直至白头偕老。但在这里，它有着更深层次的含义。即便两人无法长久相守，无法真正走到白头，但只要曾经有过那么一刻，两人能够一同面对风雪，一同经历生活的艰辛，那么此生也算是共同度过了某些重要的时刻，也算是一种心灵上的共鸣与陪伴。', '古风', 8900, 'https://p1.music.126.net/mCpqMfFxAc6YuqstAAXOEg==/109951169614143438.jpg?param=200y200');
+INSERT INTO `playlist_info` VALUES (2, '悲情古风：他朝若是同淋雪，此生也算共白头', 'e9nRUN7ZRB6pDw6', '2021-06-01 20:42:49', '这句话充满了悲情与古风之美，它描述了一种无奈中的深情，一种即便无法长久相守，也希望在某个瞬间能与你共同经历的情感。“他朝若是同淋雪”，这里的“他朝”指的是未来的某一天，而“同淋雪”则是一种情景的描绘，意味着在未来的某个时刻，两人能够一同经历风雪。这里的“雪”不仅仅是一种自然现象，更是象征着生活中的艰辛与困境。“此生也算共白头”，这里的“白头”通常指的是夫妻共度一生，直至白头偕老。但在这里，它有着更深层次的含义。即便两人无法长久相守，无法真正走到白头，但只要曾经有过那么一刻，两人能够一同面对风雪，一同经历生活的艰辛，那么此生也算是共同度过了某些重要的时刻，也算是一种心灵上的共鸣与陪伴。', '古风', 8900, 'https://p1.music.126.net/mCpqMfFxAc6YuqstAAXOEg==/109951169614143438.jpg?param=200y200');
 INSERT INTO `playlist_info` VALUES (3, '夏日乡村 | 朗朗上口的夏日旋律', 'gPF1ZjgCTJSjqhU', '2021-02-01 20:46:22', '这份歌单将带你领略夏日乡村的美好 带给你轻松愉悦的听觉体验 伴随你度过一个充满阳光和温馨的夏日', '乡村', 8876, 'https://p1.music.126.net/JDQjfYUAWwdsQO5Mlk5KsA==/109951168648977448.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzMwNTkxNjcwNjU0LzY4YTkvMjAyMzgyNzExMjE0L3g0MzExNjk1NzgzNzM0MDAwLnBuZw==&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
 INSERT INTO `playlist_info` VALUES (4, '熬夜轻音乐 | 消除疲惫的旋律咖啡因', 'OMgiLMEDTxCSSB1', '2024-04-01 20:47:18', '睡不着的夜晚 用一首曼妙的钢琴曲 冲刷掉一整天的疲倦吧', '轻音乐', 2987, 'https://p1.music.126.net/Sff3IUB-pPUdJXr2euPviw==/109951168980789846.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzU2NzQ5Mjc4MzIyL2ZhMzkvMjAyNDEwMjcxMzU4MjIveDgyNDE3MzI2ODcxMDIwMTMucG5n&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
 INSERT INTO `playlist_info` VALUES (5, '青春点唱机', 'tgy6oWzjSYCjgOA', '2020-03-01 20:48:30', '上课时 塞在袖子里的MP3 和同桌 一人一只的耳机 现在想想 那时的歌那么好听 只因我们 都曾听得入了神', '流行', 1999, 'https://p1.music.126.net/3lhdwKz7jHhoc3wl2WevEw==/109951170141161987.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzU2NTA0NjYzMzIwLzdkYmMvMjAyNDEwMTUxNDU0MTcveDQ2MDE3MzE2NTM2NTc4NTMucG5n&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
@@ -422,6 +394,16 @@ INSERT INTO `playlist_info` VALUES (7, '去大自然旅行 | 来点乡村乐旋�
 INSERT INTO `playlist_info` VALUES (8, '吉他弦下的田园风光', 'OMgiLMEDTxCSSB1', '2022-05-01 20:54:10', '像许多人一样你是否也向往着无忧无虑，隔绝世俗的世外桃源', '乡村', 899, 'https://p1.music.126.net/D8QDCiGkmBKuoQnL2DTwtA==/109951165005633820.jpg?param=200y200');
 INSERT INTO `playlist_info` VALUES (9, '华语流行轻音乐', 'ZRQ6M-UcS2yedwY', '2019-10-01 20:55:32', '纯净的音符在空气中流淌 无需歌词 却能触动心灵的琴弦 华语流行纯音乐携着悸动的节奏 诉说着情感的故事 讲述着无尽的回忆', '轻音乐', 555, 'https://p1.music.126.net/lH4MAfT9Rm2bTswyT5hN0g==/109951169443307092.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzU2NzQ3Njg0NjEwLzc2OTgvMjAyNDEwMjcxMTUxNTgveDMyMjE3MzI2Nzk1MTg1MzEucG5n&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
 INSERT INTO `playlist_info` VALUES (10, '新潮国风馆', 'tgy6oWzjSYCjgOA', '2014-01-14 20:57:14', '一起通过国风旋律 感受中华文化之美 领略那些充满中国味道的绝美创作', '古风', 6669, 'https://p1.music.126.net/_TpfX5uw7K1skadmUSWqJw==/109951168634398285.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzM2NjEwOTY0NDIxLzVjMGIvMjAyNDUxMjExMTk1Mi94Mzg2MTcxODE2MjM5MjY2Mi5wbmc=&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
+INSERT INTO `playlist_info` VALUES (11, '微醺K-Pop | 感受音乐与美酒的共鸣', 'CrMhKMGnQH6R-Vq', '2024-05-01 03:55:57', '沦陷于慵懒氛围 感受韩系音乐的温柔', '流行', 20008, 'https://p1.music.126.net/48Hmq5IvsOyd8wQVHmnS5A==/109951169361148873.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzU1Njc3MTM2NTAxLzEyZDEvMjAyNDkxMDE0NTQ1NS94NzM4MTcyODU0MzI5NTU1MC5wbmc=&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
+INSERT INTO `playlist_info` VALUES (12, '爱在圣诞 | 温暖冬夜与音乐共舞', 'CrMhKMGnQH6R-Vq', '2023-12-01 04:01:25', '圣诞心愿伴着音符旋转跳跃～', '流行', 5567, 'https://p1.music.126.net/C8HUczIvg9CA0JDWpGSDvQ==/109951169107261020.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzU3MTU2NTUzMDc0LzdlYzYvMjAyNDExMTkxNjQ2NTIveDYzOTE3MzQ1OTgwMTIyMzkucG5n&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
+INSERT INTO `playlist_info` VALUES (13, '国风电音大赏 | 电子水墨 鸾飘凤泊', 'e9nRUN7ZRB6pDw6', '2022-06-01 04:04:03', ' 当中国风遇上电子，犹如剑客出击，一剑碎困意！如果你喝腻了欧美浓咖般的提神音乐，不如试试这杯直追烈酒的国风浓茶，让你在秋冬迷蒙的清晨即刻清醒！', '古风', 2235, 'https://p1.music.126.net/bBn0Rg5YSBNSqt5lH9Ov6g==/109951168605350904.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzM2NjExMDIwMjk5L2I4M2YvMjAyNDUxMjExMjMyOS94NjI2MTcxODE2MjYwODk4Mi5wbmc=&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
+INSERT INTO `playlist_info` VALUES (14, '梦幻西游 | 梦回大唐盛世', 'e9nRUN7ZRB6pDw6', '2024-08-01 04:08:42', '梦幻西游以中国神话和文化为背景 拥有精美的画面和丰富的剧情 让玩家在游戏中体验到全面的社交和游戏乐趣 让玩家沉浸在梦幻的西游世界中 创造属于自己的传奇故事', '古风', 337, 'https://p1.music.126.net/3Bine2m64X1KH0LG-lP5lQ==/109951169102929135.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzMxNzg2NzMwNzk3LzZjN2QvMjAyMzEwMjgxNzE5MTgveDgzMDE3MDExNjMxNTg2NTYucG5n&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
+INSERT INTO `playlist_info` VALUES (15, '学习听国风 | 把君书卷灯前读', 'gPF1ZjgCTJSjqhU', '2023-09-01 04:09:53', '岁月悠长 白云苍狗 红尘中的少年捧起书卷 学向勤中得 萤窗万卷书', '古风', 1118, 'https://p1.music.126.net/j23rjySyyuVQusTbYthd5A==/109951170100622857.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzU2NDgxMjQ4ODU3LzI3MTUvMjAyNDEwMTQxMTM5NC94MzYxMTczMTU1NTU0NDU3MC5wbmc=&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
+INSERT INTO `playlist_info` VALUES (16, 'Country Lover | 进入你的浪漫乌托邦', 'gPF1ZjgCTJSjqhU', '2024-10-01 04:10:53', ' 来往车辆喧嚣 你是否也步履匆匆 趁着阳光正好 跟随乡村音乐 感受老派浪漫吧', '乡村', 4532, 'https://p1.music.126.net/OAOBFu6i8d63EOWlRD_rmg==/109951168719796068.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzI5ODcwNzMyNzM3LzYyNDIvMjAyMzcxMTE1NTIxL3g5MjMxNjkxNzQwMzIxMDMyLnBuZw==&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
+INSERT INTO `playlist_info` VALUES (17, '溫溫乡音：步履田野寻觅逸趣安然', 'OMgiLMEDTxCSSB1', '2024-01-01 04:12:36', '迎着微风\r\n\r\n驱车路上\r\n\r\n阳光和煦\r\n\r\n岁月静好', '乡村', 367, 'https://p1.music.126.net/aqf2Rl9YG9tD6b-jXRqIOw==/109951168665695099.jpg?param=200y200');
+INSERT INTO `playlist_info` VALUES (18, '散步轻音乐 | 和慵懒风光撞个满怀', 'CrMhKMGnQH6R-Vq', '2024-10-01 04:13:50', ' 就这样行走着 在温柔的风里 柔软的云朵里 明快的节奏里 还有橘子味的拥抱里', '轻音乐', 1235, 'https://p1.music.126.net/gyuT0kaTwRYmFLtr0ieeSw==/109951169009360894.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzU2NzQ5MjQzMjMzL2IzMzkvMjAyNDEwMjcxMzU1MjQveDQzODE3MzI2ODY5MjQxMTIucG5n&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
+INSERT INTO `playlist_info` VALUES (19, '学习轻音乐 | 沉浸式学习 安静纯音旋律', 'tgy6oWzjSYCjgOA', '2025-01-03 04:14:51', '拿起耳机 让舒缓的旋律伴你沉浸在知识的海洋', '轻音乐', 3556, 'https://p1.music.126.net/bvplfpdgG8KGSnwAlKDXHQ==/109951170037636686.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzU2NzUwMjAzNjA4LzIzMmQvMjAyNDEwMjcxNTk1Ny94MzE5MTczMjY5MTM5NzE4OC5wbmc=&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
+INSERT INTO `playlist_info` VALUES (20, '冬日轻音乐 | 柔软冬日里的温和轻音旋律', 'ZRQ6M-UcS2yedwY', '2020-05-01 04:14:58', ' 冬日悄悄到来 飞雪落满枝桠 让我们静静地温一壶茶 围炉夜话', '轻音乐', 5435, 'https://p1.music.126.net/2TMeYomgVVZPgx_pUGZtMQ==/109951169660249007.jpg?imageView=1&thumbnail=800y800&enlarge=1%7CimageView=1&watermark&type=1&image=b2JqL3c1bkRrTUtRd3JMRGpEekNtOE9tLzU2NzQ3NzczODQ4LzE5NzcvMjAyNDEwMjcxMjA0L3gxOTYxNzMyNjgwMDA0ODQ2LnBuZw==&dx=0&dy=0%7Cwatermark&type=1&image=b2JqL3dvbkRsc0tVd3JMQ2xHakNtOEt4LzI3NjEwNDk3MDYyL2VlOTMvOTIxYS82NjE4LzdhMDc5ZDg0NTYyMDAwZmVkZWJmMjVjYjE4NjhkOWEzLnBuZw==&dx=0&dy=0%7CimageView=1?param=200y200');
 
 -- ----------------------------
 -- Table structure for ranking_info
@@ -444,15 +426,15 @@ INSERT INTO `ranking_info` VALUES (2, '热歌', 2);
 INSERT INTO `ranking_info` VALUES (6, '新歌', 1);
 INSERT INTO `ranking_info` VALUES (7, '新歌', 2);
 INSERT INTO `ranking_info` VALUES (8, '新歌', 3);
-INSERT INTO `ranking_info` VALUES (9, '韩国', 1);
-INSERT INTO `ranking_info` VALUES (10, '韩国', 2);
-INSERT INTO `ranking_info` VALUES (11, '韩国', 3);
 INSERT INTO `ranking_info` VALUES (14, '热歌', 3);
 INSERT INTO `ranking_info` VALUES (16, '流行指数', 1);
 INSERT INTO `ranking_info` VALUES (18, '欧美', 1);
 INSERT INTO `ranking_info` VALUES (18, '流行指数', 2);
 INSERT INTO `ranking_info` VALUES (19, '欧美', 2);
 INSERT INTO `ranking_info` VALUES (21, '欧美', 3);
+INSERT INTO `ranking_info` VALUES (22, '韩国', 1);
+INSERT INTO `ranking_info` VALUES (23, '韩国', 2);
+INSERT INTO `ranking_info` VALUES (24, '韩国', 3);
 
 -- ----------------------------
 -- Table structure for setting_info
@@ -522,8 +504,11 @@ INSERT INTO `song_info` VALUES (16, '水星记', 325, 9, '1', '2016-11-25', '16.
 INSERT INTO `song_info` VALUES (17, '凄美地', 250, 9, '1', '2016-11-25', '17.mp3', '17.lrc', '2022-10-01 16:01:46', '2025-01-14 23:51:02', 15890);
 INSERT INTO `song_info` VALUES (18, 'Maps', 190, 10, '1', '2014-08-29', '18.mp3', '18.lrc', '2020-05-01 16:05:18', '2025-01-14 23:51:02', 15783);
 INSERT INTO `song_info` VALUES (19, 'One More Night', 219, 11, '1', '2012-06-20', '19.mp3', '19.lrc', '2020-05-01 16:05:18', '2025-01-14 23:51:03', 589);
-INSERT INTO `song_info` VALUES (20, 'Minuet in G', 172, 12, '1', '1999-03-16', '20.mp3', '20.png', '2020-03-01 16:12:38', '2025-01-14 23:51:04', 167);
-INSERT INTO `song_info` VALUES (21, 'Alone', 273, 13, '1', '2016-05-13', '21.mp3', '21.mp3', '2021-12-01 16:18:36', '2025-01-14 23:51:05', 12367);
+INSERT INTO `song_info` VALUES (20, 'Minuet in G', 172, 12, '1', '1999-03-16', '20.mp3', '20.lrc', '2020-03-01 16:12:38', '2025-01-15 01:45:29', 167);
+INSERT INTO `song_info` VALUES (21, 'Alone', 273, 13, '1', '2016-05-13', '21.mp3', '21.lrc', '2021-12-01 16:18:36', '2025-01-15 01:45:35', 12367);
+INSERT INTO `song_info` VALUES (22, 'Walk', 191, 14, '1', '2024-07-15', '22.mp3', '22.lrc', '2024-08-01 01:45:36', '2025-01-15 01:52:18', 71367);
+INSERT INTO `song_info` VALUES (23, 'Psycho', 210, 15, '1', '2019-12-23', '23.mp3', '23.lrc', '2021-03-01 01:47:21', '2025-01-15 01:52:23', 632675);
+INSERT INTO `song_info` VALUES (24, '첫 눈', 207, 16, '1', '2013-12-09', '24.mp3', '24.lrc', '2018-06-22 01:51:45', '2025-01-15 02:40:53', 54367);
 
 -- ----------------------------
 -- Table structure for song_playlist_relation
@@ -543,21 +528,57 @@ CREATE TABLE `song_playlist_relation`  (
 -- ----------------------------
 INSERT INTO `song_playlist_relation` VALUES (1, 1);
 INSERT INTO `song_playlist_relation` VALUES (3, 1);
+INSERT INTO `song_playlist_relation` VALUES (5, 1);
+INSERT INTO `song_playlist_relation` VALUES (7, 1);
 INSERT INTO `song_playlist_relation` VALUES (1, 2);
+INSERT INTO `song_playlist_relation` VALUES (5, 2);
+INSERT INTO `song_playlist_relation` VALUES (8, 2);
 INSERT INTO `song_playlist_relation` VALUES (1, 3);
+INSERT INTO `song_playlist_relation` VALUES (9, 3);
 INSERT INTO `song_playlist_relation` VALUES (1, 4);
 INSERT INTO `song_playlist_relation` VALUES (3, 4);
+INSERT INTO `song_playlist_relation` VALUES (6, 4);
+INSERT INTO `song_playlist_relation` VALUES (9, 4);
 INSERT INTO `song_playlist_relation` VALUES (1, 5);
 INSERT INTO `song_playlist_relation` VALUES (3, 5);
+INSERT INTO `song_playlist_relation` VALUES (6, 5);
+INSERT INTO `song_playlist_relation` VALUES (7, 5);
+INSERT INTO `song_playlist_relation` VALUES (10, 5);
 INSERT INTO `song_playlist_relation` VALUES (1, 6);
 INSERT INTO `song_playlist_relation` VALUES (3, 6);
+INSERT INTO `song_playlist_relation` VALUES (10, 6);
 INSERT INTO `song_playlist_relation` VALUES (1, 7);
+INSERT INTO `song_playlist_relation` VALUES (5, 7);
+INSERT INTO `song_playlist_relation` VALUES (10, 7);
+INSERT INTO `song_playlist_relation` VALUES (4, 8);
+INSERT INTO `song_playlist_relation` VALUES (6, 8);
+INSERT INTO `song_playlist_relation` VALUES (10, 9);
+INSERT INTO `song_playlist_relation` VALUES (4, 10);
+INSERT INTO `song_playlist_relation` VALUES (10, 10);
+INSERT INTO `song_playlist_relation` VALUES (5, 11);
+INSERT INTO `song_playlist_relation` VALUES (5, 12);
+INSERT INTO `song_playlist_relation` VALUES (6, 13);
+INSERT INTO `song_playlist_relation` VALUES (8, 15);
+INSERT INTO `song_playlist_relation` VALUES (8, 16);
+INSERT INTO `song_playlist_relation` VALUES (9, 16);
 INSERT INTO `song_playlist_relation` VALUES (2, 17);
 INSERT INTO `song_playlist_relation` VALUES (3, 17);
+INSERT INTO `song_playlist_relation` VALUES (8, 17);
+INSERT INTO `song_playlist_relation` VALUES (9, 17);
 INSERT INTO `song_playlist_relation` VALUES (2, 18);
+INSERT INTO `song_playlist_relation` VALUES (6, 18);
 INSERT INTO `song_playlist_relation` VALUES (2, 19);
+INSERT INTO `song_playlist_relation` VALUES (7, 19);
 INSERT INTO `song_playlist_relation` VALUES (2, 20);
+INSERT INTO `song_playlist_relation` VALUES (9, 20);
 INSERT INTO `song_playlist_relation` VALUES (2, 21);
+INSERT INTO `song_playlist_relation` VALUES (5, 21);
+INSERT INTO `song_playlist_relation` VALUES (4, 22);
+INSERT INTO `song_playlist_relation` VALUES (7, 22);
+INSERT INTO `song_playlist_relation` VALUES (4, 23);
+INSERT INTO `song_playlist_relation` VALUES (8, 23);
+INSERT INTO `song_playlist_relation` VALUES (4, 24);
+INSERT INTO `song_playlist_relation` VALUES (7, 24);
 
 -- ----------------------------
 -- Table structure for user_info
@@ -582,8 +603,8 @@ CREATE TABLE `user_info`  (
 -- ----------------------------
 -- Records of user_info
 -- ----------------------------
-INSERT INTO `user_info` VALUES ('CrMhKMGnQH6R-Vq', 'dj05', '$2a$10$xL8TTTC6EXuXyHytmRc6v.fjiF3StFDwRbFmOTNVqHzLsORpHsd2u', 'dj05@qq.com', '', '2024-11-13 07:48:03', '中国', '广东', '女', 'yeah', 'https://fastly.picsum.photos/id/793/200/200.jpg?hmac=3DeE830wjdSShKq_h_iFtV_jAxf43FO4xx-sivW0Q_Y', '2025-01-14 23:58:19');
-INSERT INTO `user_info` VALUES ('e9nRUN7ZRB6pDw6', 'dj02', '$2a$10$vhsy/vbE/uA.3celgfTu7urxMjAcs1BorkTL8Lrs70frnMkPt8MnO', 'dj02@qq.com', '', '2024-11-13 07:47:43', '韩国', '首尔', '男', 'moa', 'https://fastly.picsum.photos/id/793/200/200.jpg?hmac=3DeE830wjdSShKq_h_iFtV_jAxf43FO4xx-sivW0Q_Y', '2025-01-14 23:58:08');
+INSERT INTO `user_info` VALUES ('CrMhKMGnQH6R-Vq', 'sse_user', '$2a$10$xL8TTTC6EXuXyHytmRc6v.fjiF3StFDwRbFmOTNVqHzLsORpHsd2u', 'dj05@qq.com', '', '2024-11-13 07:48:03', '中国', '广东', '女', 'yeah', 'https://fastly.picsum.photos/id/793/200/200.jpg?hmac=3DeE830wjdSShKq_h_iFtV_jAxf43FO4xx-sivW0Q_Y', '2025-01-15 02:59:17');
+INSERT INTO `user_info` VALUES ('e9nRUN7ZRB6pDw6', 'hhh', '$2a$10$vhsy/vbE/uA.3celgfTu7urxMjAcs1BorkTL8Lrs70frnMkPt8MnO', 'dj02@qq.com', '', '2024-11-13 07:47:43', '韩国', '首尔', '男', 'moa', 'https://fastly.picsum.photos/id/793/200/200.jpg?hmac=3DeE830wjdSShKq_h_iFtV_jAxf43FO4xx-sivW0Q_Y', '2025-01-15 02:59:49');
 INSERT INTO `user_info` VALUES ('gPF1ZjgCTJSjqhU', '禄霞', 'Rphttk_gAEq92Xr', 'ppm_lfn86@vip.qq.com', '42794543813', '2024-11-25 14:10:13', '中国', '东北', '男', '战斗粉丝', 'https://loremflickr.com/400/400?lock=1075646362105748', '2025-01-14 23:51:54');
 INSERT INTO `user_info` VALUES ('OMgiLMEDTxCSSB1', 'dj01', '$2a$10$YDzhOkP4/mtrS6yWgjEvROZYMia6RSx2jF95jEJCgTjvQCAdaD5OO', '1796654305@qq.com', '', '2024-12-07 13:59:12', '中国', '北京', '女', '啦啦啦', 'https://bpic.588ku.com/element_origin_min_pic/19/09/11/c38b3015813868a38d3067722e57d5ba.jpg', '2025-01-14 23:57:50');
 INSERT INTO `user_info` VALUES ('tgy6oWzjSYCjgOA', 'dj03', '$2a$10$1JcBEF.dmGEe64G2orpFUeY4wO876EpxNtIrbAFEx/5KCGfbNezfy', 'dj03@qq.com', '', '2024-11-13 07:47:54', '中国', '浙江', '女', 'czenni', 'https://fastly.picsum.photos/id/793/200/200.jpg?hmac=3DeE830wjdSShKq_h_iFtV_jAxf43FO4xx-sivW0Q_Y', '2025-01-14 23:58:00');
@@ -635,13 +656,19 @@ CREATE TABLE `user_like_song`  (
 -- ----------------------------
 -- Records of user_like_song
 -- ----------------------------
+INSERT INTO `user_like_song` VALUES ('e9nRUN7ZRB6pDw6', 2);
 INSERT INTO `user_like_song` VALUES ('CrMhKMGnQH6R-Vq', 3);
 INSERT INTO `user_like_song` VALUES ('CrMhKMGnQH6R-Vq', 4);
 INSERT INTO `user_like_song` VALUES ('CrMhKMGnQH6R-Vq', 5);
+INSERT INTO `user_like_song` VALUES ('e9nRUN7ZRB6pDw6', 6);
 INSERT INTO `user_like_song` VALUES ('CrMhKMGnQH6R-Vq', 7);
 INSERT INTO `user_like_song` VALUES ('CrMhKMGnQH6R-Vq', 8);
+INSERT INTO `user_like_song` VALUES ('OMgiLMEDTxCSSB1', 8);
 INSERT INTO `user_like_song` VALUES ('CrMhKMGnQH6R-Vq', 9);
 INSERT INTO `user_like_song` VALUES ('CrMhKMGnQH6R-Vq', 10);
 INSERT INTO `user_like_song` VALUES ('CrMhKMGnQH6R-Vq', 11);
+INSERT INTO `user_like_song` VALUES ('e9nRUN7ZRB6pDw6', 17);
+INSERT INTO `user_like_song` VALUES ('CrMhKMGnQH6R-Vq', 22);
+INSERT INTO `user_like_song` VALUES ('CrMhKMGnQH6R-Vq', 24);
 
 SET FOREIGN_KEY_CHECKS = 1;
