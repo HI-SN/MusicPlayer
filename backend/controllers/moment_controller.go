@@ -66,11 +66,40 @@ func (mc *MomentController) CreateMoment(c *gin.Context) {
 
 // 获取某用户的所有动态
 func (mc *MomentController) GetAllMoments(c *gin.Context) {
+	// 获取登录用户ID，如果获取不到则为游客
+	var loginUserID string
+	if userID, exists := c.Get("user_id"); exists {
+		loginUserID = userID.(string)
+	} else {
+		// 处理游客用户逻辑，例如设置默认值或者跳过某些逻辑
+		loginUserID = ""
+	}
 	user_id := c.Param("user_id")
 	results, err := mc.Service.GetUserMoments(user_id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
+	}
+	var momentList []*models.MomentAndLike
+	for _, moment := range results {
+		isLiked, err := mc.LService.HasUserLikedMoment(moment.Moment_id, loginUserID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "HasUserLikedMoment failed"})
+			return
+		}
+		// 获取点赞数
+		count, err := mc.LService.GetMomentLikeCount(moment.Moment_id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to get like count", "error": err.Error()})
+			return
+		}
+
+		mAndL := &models.MomentAndLike{
+			Moment:    *moment,
+			IsLiked:   isLiked,
+			LikeCount: count,
+		}
+		momentList = append(momentList, mAndL)
 	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -80,14 +109,14 @@ func (mc *MomentController) GetAllMoments(c *gin.Context) {
 	startIndex := (page - 1) * page_size
 	endIndex := startIndex + page_size
 
-	if startIndex >= len(results) {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "超过已有数据范围", "momentList": []interface{}{}})
+	if startIndex >= len(momentList) {
+		c.JSON(http.StatusOK, gin.H{"message": "缺少数据，或请求超过已有数据范围", "momentList": []interface{}{}})
 		return
 	}
-	if endIndex > len(results) {
-		endIndex = len(results)
+	if endIndex > len(momentList) {
+		endIndex = len(momentList)
 	}
-	pagedMomentList := results[startIndex:endIndex]
+	pagedMomentList := momentList[startIndex:endIndex]
 	c.JSON(http.StatusOK, gin.H{"message": "Moments get", "momentList": pagedMomentList})
 }
 

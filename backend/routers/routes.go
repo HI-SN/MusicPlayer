@@ -114,6 +114,7 @@ func SetupRoutes(r *gin.Engine) {
 
 	// 动态相关路由
 	momentGroup := r.Group("/moment")
+	momentGroup.Use(middleware.AuthMiddleware())
 	{
 		momentGroup.GET("/all/:user_id", momentController.GetAllMoments)
 		momentGroup.GET("/:moment_id/like/count", momentController.GetMomentLikeCount)
