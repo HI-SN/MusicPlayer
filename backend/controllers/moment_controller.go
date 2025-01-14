@@ -87,9 +87,17 @@ func (mc *MomentController) GetAllMoments(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "HasUserLikedMoment failed"})
 			return
 		}
+		// 获取点赞数
+		count, err := mc.LService.GetMomentLikeCount(moment.Moment_id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to get like count", "error": err.Error()})
+			return
+		}
+
 		mAndL := &models.MomentAndLike{
-			Moment:  *moment,
-			IsLiked: isLiked,
+			Moment:    *moment,
+			IsLiked:   isLiked,
+			LikeCount: count,
 		}
 		momentList = append(momentList, mAndL)
 	}

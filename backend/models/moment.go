@@ -14,7 +14,8 @@ type Moment struct {
 
 type MomentAndLike struct {
 	Moment
-	IsLiked bool `json:"isLiked"`
+	IsLiked   bool `json:"isLiked"`
+	LikeCount int  `json:"likeCount"`
 }
 
 func (Moment) TableName() string {
