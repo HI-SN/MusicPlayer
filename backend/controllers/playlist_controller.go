@@ -482,7 +482,7 @@ func GetSongsOfLikelist(c *gin.Context) {
 
 	// 查询播放列表中的歌曲 ID
 	query := `
-		SELECT song_id
+		SELECT DISTINCT song_id
 		FROM song_info
 		JOIN user_like_song
 		WHERE user_id = ?
