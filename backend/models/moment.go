@@ -12,6 +12,11 @@ type Moment struct {
 	Pic_url    string    `json:"pic_url"`
 }
 
+type MomentAndLike struct {
+	Moment
+	IsLiked bool `json:"isLiked"`
+}
+
 func (Moment) TableName() string {
 	return "moment_info" // 数据库中的表名
 }
