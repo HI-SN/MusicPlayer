@@ -469,13 +469,13 @@ func (p *PlaylistService) GetPlaylistsByType(playlistType string) ([]gin.H, erro
 	// 如果 type 为 "推荐"，查询所有歌单
 	if playlistType == "推荐" {
 		query = `
-			SELECT id, title
+			SELECT id, title, cover_url
 			FROM playlist_info
 		`
 	} else {
 		// 否则，查询符合指定类型的歌单
 		query = `
-			SELECT id, title
+			SELECT id, title, cover_url
 			FROM playlist_info
 			WHERE type = ?
 		`
@@ -494,15 +494,17 @@ func (p *PlaylistService) GetPlaylistsByType(playlistType string) ([]gin.H, erro
 	for rows.Next() {
 		var id int
 		var title string
+		var url string
 
-		if err := rows.Scan(&id, &title); err != nil {
+		if err := rows.Scan(&id, &title, &url); err != nil {
 			return nil, err
 		}
 
 		// 构造歌单信息
 		playlist := gin.H{
-			"id":    strconv.Itoa(id),
-			"title": title,
+			"id":        strconv.Itoa(id),
+			"title":     title,
+			"cover_url": url,
 		}
 
 		playlists = append(playlists, playlist)

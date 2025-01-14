@@ -372,9 +372,10 @@ func (c *PlaylistController) GetPlaylistsBySearch(ctx *gin.Context) {
 
 	for _, playlist := range playlists {
 		playlistInfo := PlaylistInfo{
-			ListID: strconv.Itoa(playlist.Playlist_id),
-			Title:  playlist.Title,
-			Sum:    playlist.Hits,
+			ListID:    strconv.Itoa(playlist.Playlist_id),
+			Title:     playlist.Title,
+			Cover_url: playlist.Cover_url,
+			Sum:       playlist.Hits,
 		}
 		response.Lists = append(response.Lists, playlistInfo)
 	}
@@ -384,9 +385,10 @@ func (c *PlaylistController) GetPlaylistsBySearch(ctx *gin.Context) {
 
 // PlaylistInfo 用于返回歌单信息的结构体
 type PlaylistInfo struct {
-	ListID string `json:"list_id"`
-	Title  string `json:"title"`
-	Sum    int    `json:"sum"`
+	ListID    string `json:"list_id"`
+	Title     string `json:"title"`
+	Cover_url string `json:"cover_url"`
+	Sum       int    `json:"sum"`
 }
 
 func randomPlaylists(playlists []models.PlaylistResponse) []models.PlaylistResponse {
