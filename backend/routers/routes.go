@@ -99,6 +99,8 @@ func SetupRoutes(r *gin.Engine) {
 		authRequiredGroup.POST("/comment/:comment_id/like", commentController.LikeComment)
 		authRequiredGroup.POST("/comment/:comment_id/unlike", commentController.UnLikeComment)
 		// 其他需要身份验证的路由
+		authRequiredGroup.GET("/ranking/:name", controllers.GetRankDetailsByName)
+		authRequiredGroup.GET("/artists/detail/:id", controllers.GetArtistDetailByID)
 	}
 
 	// 用户相关路由
@@ -157,7 +159,6 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		artistGroup.POST("/add-to-song", artistController.AddArtistToSong)
 		artistGroup.GET("/:artist_id/songs", artistController.GetSongsByArtistID)
-		artistGroup.GET("/detail/:id", controllers.GetArtistDetailByID)
 	}
 	r.GET("/res/singer/:keyword", artistController.GetArtistsBySearch)
 	// 播放器相关路由
@@ -201,10 +202,5 @@ func SetupRoutes(r *gin.Engine) {
 		messageGroup.GET("/private/:user_id", controllers.GetPrivateMessageList)
 	}
 
-	// 排行榜页面相关路由注册
-	rankingGroup := r.Group("/ranking")
-	{
-		rankingGroup.GET("/:name", controllers.GetRankDetailsByName)
-	}
 	r.GET("/search/:str", controllers.Search)
 }
