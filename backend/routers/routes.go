@@ -101,6 +101,7 @@ func SetupRoutes(r *gin.Engine) {
 		// 其他需要身份验证的路由
 		authRequiredGroup.GET("/ranking/:name", controllers.GetRankDetailsByName)
 		authRequiredGroup.GET("/artists/detail/:id", controllers.GetArtistDetailByID)
+		authRequiredGroup.GET("/playlists/likelist", controllers.GetSongsOfLikelist)
 	}
 
 	// 用户相关路由
