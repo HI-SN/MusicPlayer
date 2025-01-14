@@ -115,7 +115,7 @@ type SingerInfo struct {
 // Artist 歌手信息结构体
 type ArtistDetail struct {
 	Artist      models.Artist
-	is_followed string
+	Is_followed string
 	Songs       []models.Song_ranking_detail `json:"songs"`
 }
 
@@ -151,12 +151,12 @@ func GetArtistDetailByID(c *gin.Context) {
 			return
 		}
 		if count > 0 {
-			response.is_followed = "true"
+			response.Is_followed = "true"
 		} else {
-			response.is_followed = "false"
+			response.Is_followed = "false"
 		}
 	} else {
-		response.is_followed = "false" // 用户未登录，默认设置为 false
+		response.Is_followed = "false" // 用户未登录，默认设置为 false
 	}
 	// 获取该歌手的歌曲信息
 	songs, err := GetSongsByArtistID(artist.Artist_id, userID, isLoggedIn)

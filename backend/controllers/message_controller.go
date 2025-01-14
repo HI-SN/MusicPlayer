@@ -5,16 +5,23 @@ import (
 	"backend/models"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 )
 
+type CurrentChatMessages struct {
+	messages     []models.Message
+	sender_pic   string
+	receiver_pic string
+}
+
 func GetCurrentChatMessages(c *gin.Context) {
 	// 获取路径参数
 	senderID := c.Param("sender_id")
 	receiverID := c.Param("receiver_id")
-	var messages []models.Message
+	var currentchatmessages CurrentChatMessages
 	db := database.DB
 
 	// 查询聊天记录的SQL语句，按照时间顺序（created_at字段）升序排列
@@ -43,15 +50,71 @@ func GetCurrentChatMessages(c *gin.Context) {
 			log.Printf("扫描聊天记录数据失败: %v", err)
 			continue
 		}
-		messages = append(messages, msg)
+		currentchatmessages.messages = append(currentchatmessages.messages, msg)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"messages": messages})
+	// 查询当前登录用户头像的SQL语句
+	query = `
+        SELECT 
+            profile_pic
+        FROM 
+            user_info
+        WHERE 
+            user_id = ?
+    `
+	rows, err = db.Query(query, senderID)
+	if err != nil {
+		log.Printf("查询当前登录用户头像失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取当前登录用户头像失败，请稍后再试"})
+		return
+	}
+	defer rows.Close()
+	if rows.Next() {
+		err := rows.Scan(&currentchatmessages.sender_pic)
+		if err != nil {
+			log.Printf("扫描当前登录用户头像失败: %v", err)
+		}
+	}
+
+	// 查询对方用户头像的SQL语句
+	query = `
+        SELECT 
+            profile_pic
+        FROM 
+            user_info
+        WHERE 
+            user_id = ?
+    `
+	rows, err = db.Query(query, receiverID)
+	if err != nil {
+		log.Printf("查询当前登录用户头像失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取对方用户头像失败，请稍后再试"})
+		return
+	}
+	defer rows.Close()
+	if rows.Next() {
+		err := rows.Scan(&currentchatmessages.receiver_pic)
+		if err != nil {
+			log.Printf("扫描对方用户头像失败: %v", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"messages": currentchatmessages})
+}
+
+type PrivateMessage struct {
+	ID          int
+	CreatedAt   time.Time
+	SenderID    string
+	ReceiverID  string
+	Content     string
+	IsRead      int
+	Profile_pic string
 }
 
 func GetPrivateMessageList(c *gin.Context) {
 	userID := c.Param("user_id")
-	var messages []models.Message
+	var pml []PrivateMessage
 	db := database.DB
 
 	// 使用子查询和分组来获取每个聊天对象（sender或receiver）的最近一条消息
@@ -82,7 +145,7 @@ func GetPrivateMessageList(c *gin.Context) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var msg models.Message
+		var msg PrivateMessage
 		// var created string
 		err := rows.Scan(&msg.ID, &msg.CreatedAt, &msg.SenderID, &msg.ReceiverID, &msg.Content, &msg.IsRead)
 		// log.Print(created)
@@ -95,15 +158,43 @@ func GetPrivateMessageList(c *gin.Context) {
 		// 	// 处理 created_at 为 NULL 的情况
 		// 	msg.CreatedAt = time.Time{}
 		// }
-		log.Printf("Message: %+v\n", msg)
+
 		if err != nil {
 			log.Printf("扫描消息数据失败: %v", err)
 			continue
 		}
-		messages = append(messages, msg)
+
+		// 查询对方用户头像的SQL语句
+		query = `
+			SELECT 
+				profile_pic
+			FROM 
+				user_info
+			WHERE 
+				user_id = ?
+		`
+		if userID == msg.SenderID {
+			rows, err = db.Query(query, msg.ReceiverID)
+		} else {
+			rows, err = db.Query(query, msg.SenderID)
+		}
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "获取对方用户头像失败，请稍后再试"})
+			return
+		}
+		defer rows.Close()
+		if rows.Next() {
+			err := rows.Scan(&msg.Profile_pic)
+			if err != nil {
+				log.Printf("扫描头像失败: %v", err)
+			}
+		}
+
+		pml = append(pml, msg)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"messages": messages})
+	c.JSON(http.StatusOK, gin.H{"messages": pml})
 }
 
 // 发送消息的接口处理函数
