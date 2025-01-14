@@ -63,7 +63,7 @@ func SetupRoutes(r *gin.Engine) {
 		authGroup.POST("/forgot-password", userController.ForgetPassword)
 		// authGroup.POST("/change-password", userController.ChangePassword)
 		// // 退出登录
-		// authGroup.POST("/logout", userController.Logout)
+		authGroup.POST("/logout", userController.Logout)
 	}
 
 	// 需要身份验证的路由

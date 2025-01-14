@@ -96,6 +96,26 @@ func (uc *UserController) Login(c *gin.Context) {
 
 // 退出登录
 func (uc *UserController) Logout(c *gin.Context) {
+	// 从 Cookie 中获取会话标识符
+	sessionID, err := c.Cookie("sessionID")
+	if err != nil {
+		// 如果没有找到会话标识符，可能是用户已经退出登录或 Cookie 被删除
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "用户未登录或会话已过期"})
+		return
+	}
+
+	// 从 Redis 中删除会话 ID
+	_, err = database.RedisClient.Del(context.Background(), "session:"+sessionID).Result()
+	if err != nil {
+		// 如果删除失败，返回错误信息
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "退出登录失败，无法删除会话"})
+		return
+	}
+
+	// 清除客户端的 Cookie
+	c.SetCookie("sessionID", "", -1, "/", "", false, true)
+
+	// 返回成功消息
 	c.JSON(http.StatusOK, gin.H{"message": "退出登录成功"})
 }
 
@@ -787,7 +807,7 @@ func (uc *UserController) LikeSong(c *gin.Context) {
 	}
 	err := uc.USService.CreateUserLikeSong(uls)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "CreateUserLikeSong faild"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "CreateUserLikeSong faild", "error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "喜欢歌曲成功"})
